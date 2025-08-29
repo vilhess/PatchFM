@@ -1,0 +1,15 @@
+name: patchfm
+
+ws: 1024
+epochs: 150
+lr: 1e-4
+
+patch_len: 32
+d_model: 1024
+n_heads: 32
+n_layers_encoder: 6
+dropout: 0.15
+quantiles: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+
+epochs_warmups: 80
+n_warmups: 4

@@ -1,0 +1,6 @@
+*.pt
+*.npy
+*.ckpt
+*.pth
+__pycache__/
+archive/

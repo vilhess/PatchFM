@@ -1,0 +1,4 @@
+batch_size: 256
+num_workers: 21
+pin_memory: true
+gradient_accumulation_steps: 1
