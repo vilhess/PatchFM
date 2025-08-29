@@ -9,4 +9,4 @@ TiRex : 1500157.37
 
 # context length 768 forecast horizon 32
 PatchFM : 197384.328125
-TiRex : 
+TiRex : 2596248.5
