@@ -8,7 +8,7 @@ if __name__ == "__main__":
     
     parser = argparse.ArgumentParser()
     parser.add_argument('--model', type=str, default='patchfm', choices=['patchfm', 'tirex'], help='Model to evaluate')
-    parser.add_argument('--context_length', type=int, default=1024, choices=[32, 64, 256, 512, 768, 1024], help='Context length for evaluation')
+    parser.add_argument('--context_length', type=int, default=1024, choices=[32, 64, 128, 256, 512, 768, 1024], help='Context length for evaluation')
 
     args = parser.parse_args()
     BASE_MODEL = args.model
@@ -37,7 +37,7 @@ if __name__ == "__main__":
             loss = loss.mean(dim=1)
             all_losses.append(loss)
         all_losses = torch.cat(all_losses, dim=0)
-        print(f"Mean loss for {model_name} on context length {CONTEXT_LENGTH} : {all_losses.mean().item()}") # 86787.2265625
+        print(f"Mean loss for {model_name} on context length {CONTEXT_LENGTH} : {all_losses.mean().item()}") 
 
     if BASE_MODEL == "tirex":
 
@@ -55,4 +55,7 @@ if __name__ == "__main__":
             loss = loss.mean(dim=1)
             all_losses.append(loss)
         all_losses = torch.cat(all_losses, dim=0)
-        print(f"Mean loss for TiRex on context length {CONTEXT_LENGTH} : {all_losses.mean().item()}") # 1500157.37
+        print(f"Mean loss for TiRex on context length {CONTEXT_LENGTH} : {all_losses.mean().item()}")
+
+
+# save tmux logs : tmux capture-pane -S - -E - \; save-buffer ./tmux_buffer.log \; delete-buffer
