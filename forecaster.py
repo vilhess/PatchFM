@@ -13,7 +13,7 @@ class PatchFMConfig:
     n_heads: int = 32
     n_layers_encoder: int = 6
     quantiles: list[float] = field(default_factory=lambda: [0.1 * i for i in range(1, 10)])
-    ckpt_path: str = "../ckpts/pretrained_patchfm.pth"
+    ckpt_path: str = "../ckpts/pretrained_patchfm_all.pth"
 
 
 # --- Forecaster Model ---
@@ -57,7 +57,7 @@ class Forecaster(nn.Module):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.to(self.device)
     
-    @torch.no_grad()
+    @torch.inference_mode()
     def forecast(self, x: torch.Tensor, forecast_horizon: int | None = None, quantiles: list[float] | None = None) -> torch.Tensor: 
         x = x.to(self.device)
         # Ensure input shape (bs, length)

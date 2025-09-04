@@ -23,7 +23,7 @@ if __name__ == "__main__":
 
         from model import PatchFMLit
 
-        model_name = "patchfm_200_80wu4_256.ckpt"
+        model_name = "10_epochs_3wu_12totalepochs_bs256_arti_real.ckpt"
 
         model = PatchFMLit.load_from_checkpoint(f"../ckpts/{model_name}")
         model.eval()
