@@ -7,7 +7,9 @@ sys.path.append("..")
 if __name__ == "__main__":
     
     parser = argparse.ArgumentParser()
+
     parser.add_argument('--model', type=str, default='patchfm', choices=['patchfm', 'tirex'], help='Model to evaluate')
+    parser.add_argument('--dataset', type=str, default='artificial', choices=['artificial', 'utsd'], help='Dataset to evaluate on')
     parser.add_argument('--context_length', type=int, default=1024, choices=[32, 64, 128, 256, 512, 768, 1024], help='Context length for evaluation')
 
     args = parser.parse_args()
@@ -16,28 +18,37 @@ if __name__ == "__main__":
 
     print(f"Evaluating model: {BASE_MODEL} on context length: {CONTEXT_LENGTH}")
 
-    dataset = torch.load("../data/full.pt")
+    if args.dataset == "artificial":
+        print("Using artificial dataset")
+        dataset = torch.load("../data/artificial.pt")
+
+    elif args.dataset == "utsd":
+        from dataset import UTSDataset
+        print("Using UTSD dataset")
+        dataset = UTSDataset(input_len=CONTEXT_LENGTH, output_len=32, flag="val")
+
     testloader = torch.utils.data.DataLoader(dataset, batch_size=256, shuffle=False)
 
     if BASE_MODEL == "patchfm":
 
-        from model import PatchFMLit
+        from forecaster import Forecaster, PatchFMConfig
 
-        model_name = "10_epochs_3wu_12totalepochs_bs256_arti_real.ckpt"
+        model_name = "pretrained_patchfm_artificial.pth"
 
-        model = PatchFMLit.load_from_checkpoint(f"../ckpts/{model_name}")
-        model.eval()
+        config = PatchFMConfig()
+        config.ckpt_path = f"../ckpts/{model_name}"
+
+        model = Forecaster(config)
 
         all_losses = []
         for input, target in tqdm(testloader):
             input = input[:, -CONTEXT_LENGTH:]
-            with torch.no_grad():
-                out = model.model(input.to('cuda'))[:, -1, :, list(model.model.quantiles).index(0.5)]
+            out, _ = model(input, quantiles=[0.5])
             loss = (out.detach().cpu() - target)**2
             loss = loss.mean(dim=1)
             all_losses.append(loss)
         all_losses = torch.cat(all_losses, dim=0)
-        print(f"Mean loss for {model_name} on context length {CONTEXT_LENGTH} : {all_losses.mean().item()}") 
+        print(f"Mean loss for {model_name} on {args.dataset} dataset for context length {CONTEXT_LENGTH} : {all_losses.mean().item()}") 
 
     if BASE_MODEL == "tirex":
 
@@ -55,7 +66,7 @@ if __name__ == "__main__":
             loss = loss.mean(dim=1)
             all_losses.append(loss)
         all_losses = torch.cat(all_losses, dim=0)
-        print(f"Mean loss for TiRex on context length {CONTEXT_LENGTH} : {all_losses.mean().item()}")
+        print(f"Mean loss for TiRex on {args.dataset} dataset for context length {CONTEXT_LENGTH} : {all_losses.mean().item()}")
 
 
 # save tmux logs : tmux capture-pane -S - -E - \; save-buffer ./tmux_buffer.log \; delete-buffer
