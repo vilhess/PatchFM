@@ -2,8 +2,7 @@ from dataclasses import dataclass, field
 import torch
 import torch.nn as nn
 from einops import rearrange
-
-from model import RevIN, ResidualBlock, TransformerEncoder
+from inference_modules import RevIN, ResidualBlock, TransformerEncoder
 
 # --- Configuration ---
 @dataclass
@@ -80,7 +79,6 @@ class Forecaster(nn.Module):
         predictions = []
 
         for _ in range(rollouts):
-            x_input = x.clone()
 
             # Forward pass
             x = self.revin(x, mode="norm")
@@ -101,13 +99,15 @@ class Forecaster(nn.Module):
             predictions.append(forecasting[:, -1, :, :])
 
             # Append median patch for next rollout
-            x = torch.cat([x_input, patch_median], dim=1)
+            x = patch_median.clone()
         
         pred_quantiles = torch.cat(predictions, dim=1)
         pred_quantiles = pred_quantiles[:, :forecast_horizon, :]
         pred_median = pred_quantiles[:, :, 4]
 
         pred_quantiles = pred_quantiles[..., [self.quantiles.index(q) for q in quantiles]] if quantiles is not None else pred_quantiles
+
+        self.clear_cache()
 
         return pred_median, pred_quantiles
 
@@ -123,7 +123,15 @@ class Forecaster(nn.Module):
         median, _ = self(ctx, forecast_horizon=self.patch_len, quantiles=[0.5])
         median = median.detach().cpu()
         loss = torch.nn.functional.mse_loss(median, target).detach().cpu()
+
+        self.clear_cache()
+
         return loss.numpy()
+    
+    def clear_cache(self):
+        self.revin.clear_cache()
+        for layer in self.transformer_encoder.layers:
+            layer.attn.clear_cache()
     
 
 # --- Plotting Utility ---

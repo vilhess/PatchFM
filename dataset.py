@@ -329,7 +329,7 @@ class SyntheticGPTimeSeriesDataset(Dataset):
         target = sample[self.seq_len:self.seq_len + self.target_len]
         return ctx, target
     
-def artificial_dataset(seq_len=256, target_len=96, K=3, alpha=1.5, noise=True, file_path="data/synthetic_timeseries_gp.npy"):
+def artificial_dataset(seq_len=256, target_len=96, K=3, alpha=1.5, noise=True, file_path="/lustre/fswork/projects/rech/ulm/uww31rp/patchfm/data/synthetic_timeseries_gp.npy"):
     tsmixup_dataset = TSMixUp(seq_len=seq_len, target_len=target_len, K=K, alpha=alpha)
     artificial_dataset = SyntheticTimeSeriesDataset(seq_len=seq_len, target_len=target_len, noise=noise)
     gpdataset = SyntheticGPTimeSeriesDataset(file_path=file_path, seq_len=seq_len, target_len=target_len)
@@ -339,7 +339,6 @@ def get_dataset(seq_len, target_len, utsd_name='UTSD-1G', noise=True, scale=Fals
     ds = SyntheticTimeSeriesDataset(seq_len=seq_len, target_len=target_len, noise=noise)
     utsd = UTSDataset(subset_name=utsd_name, input_len=seq_len, output_len=target_len, scale=scale, flag='train', stride=1)
     return torch.utils.data.ConcatDataset([ds, utsd])
-
 
 ### utils functions for dataset
 

@@ -18,3 +18,9 @@ TiRex : 2552907.75
 # context length 128 forecast horizon 32
 PatchFM : 151495.59375
 TiRex : 3327954.25
+
+
+# artificial model on utsd, ctx len 1024 : 205519.0625
+# all model on utsd, ctx len 1024 : 143534.796875
+# tirex on utsd, ctx len 1024 : 106892.84375
+# big model on utsd, ctx len 1024 : 140541.9375

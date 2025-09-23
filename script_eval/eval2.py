@@ -20,7 +20,7 @@ if __name__ == "__main__":
 
     if args.dataset == "artificial":
         print("Using artificial dataset")
-        dataset = torch.load("../data/artificial.pt")
+        dataset = torch.load("../data/full.pt")
 
     elif args.dataset == "utsd":
         from dataset import UTSDataset
@@ -33,10 +33,13 @@ if __name__ == "__main__":
 
         from forecaster import Forecaster, PatchFMConfig
 
-        model_name = "pretrained_patchfm_artificial.pth"
+        model_name = "huge_v2.pth"
 
         config = PatchFMConfig()
         config.ckpt_path = f"../ckpts/{model_name}"
+        if "huge" in config.ckpt_path:
+            config.n_heads = 64
+            config.d_model = 2048
 
         model = Forecaster(config)
 
