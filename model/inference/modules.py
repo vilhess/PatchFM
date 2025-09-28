@@ -42,11 +42,6 @@ class RevIN(nn.Module):
             if nan_idx.any():
                 out = fill_nan_with_last_observed(out)
 
-        elif mode == "denorm":
-            assert self.cached_mean is not None and self.cached_std is not None, \
-                "Call forward(..., 'norm') before 'denorm'"
-            out = x64 * self.cached_std + self.cached_mean
-
         elif mode == "denorm_last":
             assert self.cached_mean is not None and self.cached_std is not None, \
                 "Call forward(..., 'norm') before 'denorm'"
