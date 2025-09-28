@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 from einops import rearrange
-from model.inference.modules import RevIN, ResidualBlock, TransformerEncoder
+from model.inference.modules import RevIN, ResidualBlock, TransformerEncoder, PatchFM
 
 
 # --- Forecaster Model ---
@@ -10,14 +10,37 @@ class Forecaster(nn.Module):
         super().__init__()
 
         # Store config
-        self.patch_len = config.patch_len
-        self.d_model = config.d_model
-        self.n_heads = config.n_heads
-        self.n_layers_encoder = config.n_layers_encoder
-        self.quantiles = config.quantiles
-        self.n_quantiles = len(config.quantiles)
+        self.patch_len = config["patch_len"]
+        self.d_model = config["d_model"]
+        self.n_heads = config["n_heads"]
+        self.n_layers_encoder = config["n_layers_encoder"]
+        self.quantiles = config["quantiles"]
+        self.n_quantiles = len(self.quantiles)
 
-        # Components
+        assert config["load_from_hub"] or config["ckpt_path"] is not None, (
+            "Either load_from_hub must be True or ckpt_path must be provided."
+        )
+
+        # Load weights either from HF Hub or local checkpoint
+        if config["load_from_hub"]:
+            print("Loading base model from HuggingFace Hub...")
+            base_model = PatchFM.from_pretrained("vilhess/PatchFM")
+            self._init_from_base(base_model)
+        else:
+            print(f"Loading weights from local ckpt: {config['ckpt_path']}")
+            self._init_components()
+            state = torch.load(config["ckpt_path"], weights_only=True)
+            self.load_state_dict(state, strict=False)
+
+        self.eval()
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.to(self.device)
+
+        if config["compile"]:
+            self = torch.compile(self)
+
+    def _init_components(self):
+        """Initialize modules from scratch."""
         self.revin = RevIN()
         self.proj_embedding = ResidualBlock(
             in_dim=self.patch_len, 
@@ -35,17 +58,12 @@ class Forecaster(nn.Module):
             out_dim=self.patch_len * self.n_quantiles
         )
 
-        # Load pretrained weights if available
-        self.load_state_dict(
-            torch.load(config.ckpt_path, weights_only=True), 
-            strict=False
-        )
-        self.eval()
-
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.to(self.device)
-        if config.compile:
-            self = torch.compile(self)
+    def _init_from_base(self, base_model):
+        """Initialize modules by reusing a pretrained PatchFM model."""
+        self.revin = base_model.revin
+        self.proj_embedding = base_model.proj_embedding
+        self.transformer_encoder = base_model.transformer_encoder
+        self.proj_output = base_model.proj_output
     
     @torch.inference_mode()
     def forecast(self, x: torch.Tensor, forecast_horizon: int | None = None, quantiles: list[float] | None = None) -> torch.Tensor: 

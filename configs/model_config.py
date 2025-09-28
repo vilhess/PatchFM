@@ -1,4 +1,4 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, asdict
 
 @dataclass
 class PatchFMConfig:
@@ -9,5 +9,15 @@ class PatchFMConfig:
     quantiles: list[float] = field(default_factory=lambda: [0.1 * i for i in range(1, 10)])
 
     # for inference
+    load_from_hub: bool = False
     ckpt_path: str = "../ckpts/huge_v3.pth"
-    compile: bool = True # the first time compilation takes a while but speeds up subsequent inferences
+    compile: bool = False
+
+    def __getitem__(self, key):
+        return getattr(self, key)
+
+    def __setitem__(self, key, value):
+        return setattr(self, key, value)
+
+    def to_dict(self):
+        return asdict(self)

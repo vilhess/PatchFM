@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
 
 @dataclass
 class TrainConfig:
@@ -15,3 +15,12 @@ class TrainConfig:
     gpus: int = 1
     num_nodes: int = 1
     strategy: str = "auto"
+
+    def __getitem__(self, key):
+        return getattr(self, key)
+
+    def __setitem__(self, key, value):
+        return setattr(self, key, value)
+
+    def to_dict(self):
+        return asdict(self)

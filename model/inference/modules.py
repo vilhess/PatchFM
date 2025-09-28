@@ -4,6 +4,7 @@ import torch
 import torch.nn as nn
 from einops import rearrange
 from rotary_embedding_torch import RotaryEmbedding
+from huggingface_hub import PyTorchModelHubMixin
 
 def fill_nan_with_last_observed(x):
     bs, pn, pl = x.size()
@@ -214,3 +215,33 @@ class TransformerEncoder(nn.Module):
         for layer in self.layers:
             x = layer(x)
         return self.norm(x)
+    
+class PatchFM(nn.Module, PyTorchModelHubMixin): 
+    def __init__(self, config):
+        super().__init__()
+
+        # Store config
+        self.patch_len = config["patch_len"]
+        self.d_model = config["d_model"]
+        self.n_heads = config["n_heads"]
+        self.n_layers_encoder = config["n_layers_encoder"]
+        self.quantiles = config["quantiles"]
+        self.n_quantiles = len(self.quantiles)
+
+        # Components
+        self.revin = RevIN()
+        self.proj_embedding = ResidualBlock(
+            in_dim=self.patch_len, 
+            hid_dim=2 * self.patch_len, 
+            out_dim=self.d_model
+        )
+        self.transformer_encoder = TransformerEncoder(
+            d_model=self.d_model, 
+            n_heads=self.n_heads, 
+            n_layers=self.n_layers_encoder
+        )
+        self.proj_output = ResidualBlock(
+            in_dim=self.d_model, 
+            hid_dim=2 * self.d_model, 
+            out_dim=self.patch_len * self.n_quantiles
+        )
