@@ -37,7 +37,7 @@ def main(cfg : DictConfig) -> None:
         save_on_train_epoch_end=True,
     )
 
-    model = PatchFMLit(config=cfg.model) 
+    model = PatchFMLit(config=config_model) 
 
     trainset = get_dataset(seq_len=config_model.ws, target_len=config_model.patch_len)
     trainloader = torch.utils.data.DataLoader(trainset, batch_size=settings.batch_size, shuffle=True,
