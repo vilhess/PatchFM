@@ -14,4 +14,4 @@ class TrainConfig:
     pin_memory: bool = True
     gpus: int = 1
     num_nodes: int = 1
-    strategy: str = None
+    strategy: str = "auto"
