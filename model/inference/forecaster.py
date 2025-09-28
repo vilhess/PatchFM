@@ -129,8 +129,7 @@ def plot_forecast(context, median, quantiles=None, target_pred=None, context_plo
         context = context[0]
     
     if quantiles is not None:
-        assert quantiles.shape[1]==3, "Quantiles should be of shape (L, 3)"
-        print(f"Warning: Currently quantiles works only for 3 quantiles (lower, median, upper), got {quantiles.shape[1]}")
+        assert quantiles.shape[1]==3, f"Error for Plot: Currently plot works only for 3 quantiles (lower, median, upper), got {quantiles.shape[1]}"
 
     if median.device != torch.device('cpu'):
         median = median.cpu()
