@@ -35,7 +35,7 @@ class RevIN(nn.Module):
 
         if mode == "norm":
             mean, std = self._get_statistics(x64)
-            self.cached_mean, self.cached_std = mean.detach(), std.detach()
+            self.cached_mean, self.cached_std = mean[:, -1:].detach(), std[:, -1:].detach()
             out = (x64 - mean) / std
             
             nan_idx = out.isnan()
@@ -45,7 +45,7 @@ class RevIN(nn.Module):
         elif mode == "denorm_last":
             assert self.cached_mean is not None and self.cached_std is not None, \
                 "Call forward(..., 'norm') before 'denorm'"
-            out = x64 * self.cached_std[:, -1:] + self.cached_mean[:, -1:]
+            out = x64 * self.cached_std + self.cached_mean
 
         else:
             raise NotImplementedError(f"Mode '{mode}' not implemented.")
