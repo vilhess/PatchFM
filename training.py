@@ -6,7 +6,6 @@ import hydra
 from omegaconf import DictConfig, OmegaConf
 import wandb
 from pytorch_lightning.loggers import WandbLogger
-import os
 
 from model import PatchFMLit
 from dataset import get_dataset
