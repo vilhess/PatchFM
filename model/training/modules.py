@@ -110,11 +110,9 @@ class TransformerEncoder(nn.Module):
         return self.norm(x)
     
 class PatchFM(nn.Module): 
-    def __init__(self, seq_len, patch_len, d_model, n_heads, n_layers_encoder, dropout=0.1, quantiles=None):
+    def __init__(self, patch_len, d_model, n_heads, n_layers_encoder, dropout=0.1, quantiles=None):
         super().__init__()
-        assert seq_len%patch_len==0, f"seq_len ({seq_len}) should be divisible by patch_len ({patch_len})"
         
-        self.seq_len = seq_len
         self.patch_len = patch_len
 
         self.quantiles = quantiles if quantiles is not None else [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
@@ -127,7 +125,6 @@ class PatchFM(nn.Module):
         self.transformer_encoder = TransformerEncoder(d_model=d_model, n_heads=n_heads, n_layers=n_layers_encoder, dropout=dropout)
 
         self.proj_output = ResidualBlock(in_dim=d_model, hid_dim=2*d_model, out_dim=patch_len * self.n_quantiles, dropout=dropout)
-        #self.proj_output = ResidualBlock(in_dim=d_model, hid_dim=2*d_model, out_dim=patch_len, dropout=dropout)
 
         self.init_weights()
 

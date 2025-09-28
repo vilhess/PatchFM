@@ -1,2 +1,2 @@
-from model.inference.forecaster import Forecaster, plot_forecast, PatchFMConfig
+from model.inference.forecaster import Forecaster, plot_forecast
 from model.training.trainer import PatchFMLit

@@ -1,24 +1,12 @@
-from dataclasses import dataclass, field
 import torch
 import torch.nn as nn
 from einops import rearrange
 from model.inference.modules import RevIN, ResidualBlock, TransformerEncoder
 
-# --- Configuration ---
-@dataclass
-class PatchFMConfig:
-    patch_len: int = 32
-    d_model: int = 1024
-    n_heads: int = 32
-    n_layers_encoder: int = 6
-    quantiles: list[float] = field(default_factory=lambda: [0.1 * i for i in range(1, 10)])
-    ckpt_path: str = "../ckpts/pretrained_patchfm_all.pth"
-    compile: bool = True # the first time compilation takes a while but speeds up subsequent inferences
-
 
 # --- Forecaster Model ---
 class Forecaster(nn.Module): 
-    def __init__(self, config: PatchFMConfig):
+    def __init__(self, config):
         super().__init__()
 
         # Store config

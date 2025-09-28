@@ -5,36 +5,24 @@ from model.training.loss import MultiQuantileLoss
 from model.training.modules import PatchFM
 
 class PatchFMLit(L.LightningModule):
-    def __init__(self, config):
+    def __init__(self, model_config, train_config):
         super().__init__()
-        
-        assert config.epochs >= config.epochs_warmups, "epochs must be greater than epochs_warmups"
-        assert config.n_warmups > 0, "n_warmups must be greater than 0"
-        assert config.epochs_warmups % config.n_warmups == 0, "number of warmups epochs must be divisible by n_warmups"
 
         self.model = PatchFM(
-            seq_len=config.ws, 
-            patch_len=config.patch_len, 
-            d_model=config.d_model, 
-            n_heads=config.n_heads, 
-            n_layers_encoder=config.n_layers_encoder, 
-            dropout=config.dropout, 
-            quantiles=config.quantiles
+            patch_len=model_config.patch_len, 
+            d_model=model_config.d_model, 
+            n_heads=model_config.n_heads, 
+            n_layers_encoder=model_config.n_layers_encoder, 
+            dropout=train_config.dropout, 
+            quantiles=model_config.quantiles
         )
-
         self.criterion = MultiQuantileLoss(self.model.quantiles)
-        
-        self.ctx = [config.ws // config.n_warmups * i for i in range(1, config.n_warmups + 1)]
-        self.n_epochs = config.epochs_warmups // config.n_warmups
 
+        config = {**model_config.__dict__, **train_config.__dict__}
         self.save_hyperparameters(config)
 
     def training_step(self, batch, batch_idx):
         x, y = batch
-
-        current_epoch = self.current_epoch
-        ctx = self.ctx[current_epoch // self.n_epochs if current_epoch < len(self.ctx) * self.n_epochs else -1]
-        x = x[:, -ctx:]
 
         prediction, x_patch = self.model(x)
         y = y.unsqueeze(1)

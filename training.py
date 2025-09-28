@@ -2,55 +2,59 @@ import torch
 import lightning as L
 from lightning.pytorch.callbacks import ModelCheckpoint
 from lightning.pytorch import seed_everything
-import hydra
-from omegaconf import DictConfig, OmegaConf
 import wandb
 from pytorch_lightning.loggers import WandbLogger
+from pprint import pprint
 
 from model import PatchFMLit
 from dataset import get_dataset
+from configs import TrainConfig, PatchFMConfig
 
-@hydra.main(version_base=None, config_path="conf", config_name="config")
-def main(cfg : DictConfig) -> None:
+def main():
 
     seed_everything(0, workers=True)
 
-    OmegaConf.set_struct(cfg, False)
+    train_cfg = TrainConfig()
+    model_cfg = PatchFMConfig()
 
-    print(f"---------")
-    print("Config:")
-    print(OmegaConf.to_yaml(cfg))
-    print(f"---------")
+    assert train_cfg.seq_len % model_cfg.patch_len == 0, f"Sequence length ({train_cfg.seq_len}) must be divisible by patch length ({model_cfg.patch_len})."
 
-    settings = cfg.settings
-    config_model = cfg.model
+    print("---------")
+    print("Model Configuration:")
+    pprint(model_cfg.__dict__, sort_dicts=False)
+
+    print("Training Configuration:")
+    pprint(train_cfg.__dict__, sort_dicts=False)
+    print("---------")
 
     wandb_logger = WandbLogger(project='PatchFM', name=f"pretraining")
-    wandb_logger.config = OmegaConf.to_container(cfg, resolve=True)
+
+    wandb_logger.model_config = model_cfg
+    wandb_logger.train_config = train_cfg
 
     checkpoint_callback = ModelCheckpoint(
         save_top_k=-1,    
         save_last=True,  
-        dirpath=f"./ckpts/",
+        dirpath=train_cfg.checkpoint_path,
         filename="patchfm-{epoch:02d}",
         save_on_train_epoch_end=True,
     )
 
-    model = PatchFMLit(config=config_model) 
+    model = PatchFMLit(train_config=train_cfg, model_config=model_cfg) 
 
-    trainset = get_dataset(seq_len=config_model.ws, target_len=config_model.patch_len)
-    trainloader = torch.utils.data.DataLoader(trainset, batch_size=settings.batch_size, shuffle=True,
-                                                num_workers=settings.num_workers, pin_memory=settings.pin_memory)
-    config_model["len_loader"] = len(trainloader)
+    trainset = get_dataset(seq_len=train_cfg.seq_len, target_len=model_cfg.patch_len)
+    trainloader = torch.utils.data.DataLoader(trainset, batch_size=train_cfg.batch_size, shuffle=True,
+                                                num_workers=train_cfg.num_workers, pin_memory=train_cfg.pin_memory)
+    train_cfg.len_loader = len(trainloader)
 
     trainer = L.Trainer(
-        max_epochs=config_model.epochs,
+        max_epochs=train_cfg.epochs,
         enable_checkpointing=True,
         log_every_n_steps=10,
         accelerator="gpu",
-        devices=settings.gpus,
-        num_nodes=settings.num_nodes,
-        strategy=settings.strategy,
+        devices=train_cfg.gpus,
+        num_nodes=train_cfg.num_nodes,
+        strategy=train_cfg.strategy,
         fast_dev_run=False,
         callbacks=[checkpoint_callback],
         logger=wandb_logger
