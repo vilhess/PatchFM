@@ -23,4 +23,4 @@ TiRex : 3327954.25
 # artificial model on utsd, ctx len 1024 : 205519.0625
 # all model on utsd, ctx len 1024 : 143534.796875
 # tirex on utsd, ctx len 1024 : 106892.84375
-# big model on utsd, ctx len 1024 : 140541.9375
+# big model on utsd, ctx len 1024 : 138933.765625

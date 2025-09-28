@@ -33,7 +33,7 @@ if __name__ == "__main__":
 
         from forecaster import Forecaster, PatchFMConfig
 
-        model_name = "huge_v2.pth"
+        model_name = "huge_v3.pth"
 
         config = PatchFMConfig()
         config.ckpt_path = f"../ckpts/{model_name}"

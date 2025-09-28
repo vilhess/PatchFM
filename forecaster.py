@@ -13,6 +13,7 @@ class PatchFMConfig:
     n_layers_encoder: int = 6
     quantiles: list[float] = field(default_factory=lambda: [0.1 * i for i in range(1, 10)])
     ckpt_path: str = "../ckpts/pretrained_patchfm_all.pth"
+    compile: bool = True # the first time compilation takes a while but speeds up subsequent inferences
 
 
 # --- Forecaster Model ---
@@ -55,6 +56,8 @@ class Forecaster(nn.Module):
 
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.to(self.device)
+        if config.compile:
+            self = torch.compile(self)
     
     @torch.inference_mode()
     def forecast(self, x: torch.Tensor, forecast_horizon: int | None = None, quantiles: list[float] | None = None) -> torch.Tensor: 

@@ -344,7 +344,6 @@ def get_dataset(seq_len, target_len, utsd_name='UTSD-1G', noise=True, scale=Fals
 
 def triangle_with_flat(xx, freq, slope, flat_ratio):
     period = freq
-    flat_len = flat_ratio * period
     tri_len = (1 - flat_ratio) * period
     half_tri = tri_len / 2
 

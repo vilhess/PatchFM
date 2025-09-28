@@ -11,5 +11,6 @@ n_layers_encoder: 6
 dropout: 0.15
 quantiles: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
 
-epochs_warmups: 80
-n_warmups: 4
+# useful if training with progressive context - Not the case for the big model
+epochs_warmups: 1
+n_warmups: 1

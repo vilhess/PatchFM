@@ -4,3 +4,5 @@
 *.pth
 __pycache__/
 archive/
+notebooks/inference.ipynb
+script_eval/
