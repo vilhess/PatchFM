@@ -5,3 +5,5 @@
 __pycache__/
 archive/
 script_eval/
+notebooks/inference.ipynb
+*.DS_Store

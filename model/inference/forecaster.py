@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 import torch
 import torch.nn as nn
 from einops import rearrange
-from inference_modules import RevIN, ResidualBlock, TransformerEncoder
+from model.inference.modules import RevIN, ResidualBlock, TransformerEncoder
 
 # --- Configuration ---
 @dataclass
@@ -116,20 +116,6 @@ class Forecaster(nn.Module):
 
     def __call__(self, context: torch.Tensor, forecast_horizon: int | None = None, quantiles: list[float] | None = None) -> torch.Tensor:
         return self.forecast(context, forecast_horizon, quantiles)
-    
-    def anomaly_scorer(self, x):
-        if x.ndim == 1:
-            x = x.unsqueeze(0)
-        ctx = x[:, :-self.patch_len]
-        target = x[:, -self.patch_len:]
-
-        median, _ = self(ctx, forecast_horizon=self.patch_len, quantiles=[0.5])
-        median = median.detach().cpu()
-        loss = torch.nn.functional.mse_loss(median, target).detach().cpu()
-
-        self.clear_cache()
-
-        return loss.numpy()
     
     def clear_cache(self):
         self.revin.clear_cache()

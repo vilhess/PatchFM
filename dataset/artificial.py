@@ -1,84 +1,8 @@
-import datasets
 import numpy as np
 import torch
 from torch.utils.data import Dataset
-from sklearn.preprocessing import StandardScaler
-from tqdm import tqdm
 import random
-
-# subset name can be one of the following:
-# 'UTSD-1G', 'UTSD-2G', 'UTSD-4G', 'UTSD-12G',
-
-class UTSDataset(Dataset):
-    def __init__(self, subset_name=r'UTSD-1G', flag='train', split=0.9,
-                 input_len=None, output_len=None, scale=False, stride=1):
-        self.input_len = input_len
-        self.output_len = output_len
-        self.seq_len = input_len + output_len
-        assert flag in ['train', 'val']
-        assert split >= 0 and split <=1.0
-        type_map = {'train': 0, 'val': 1, 'test': 2}
-        self.set_type = type_map[flag]
-        self.flag = flag
-        self.scale = scale
-        self.split = split
-        self.stride = stride
-
-        self.data_list = []
-        self.n_window_list = []
-
-        self.subset_name = subset_name
-        self.__read_data__()
-
-    def __read_data__(self):
-        dataset = datasets.load_dataset("thuml/UTSD", self.subset_name, split='train')
-        print('Indexing dataset...')
-        for item in tqdm(dataset):
-            self.scaler = StandardScaler()
-            data = item['target']
-            data = np.array(data).reshape(-1, 1)
-            num_train = int(len(data) * self.split)
-            border1s = [0, num_train - self.seq_len]
-            border2s = [num_train, len(data)]
-
-            border1 = border1s[self.set_type]
-            border2 = border2s[self.set_type]
-
-            if self.scale:
-                train_data = data[border1s[0]:border2s[0]]
-                self.scaler.fit(train_data)
-                data = self.scaler.transform(data)
-
-            data = data[border1:border2]
-            n_window = (len(data) - self.seq_len) // self.stride + 1
-            if n_window < 1:
-                continue
-
-            self.data_list.append(data)
-            self.n_window_list.append(n_window if len(self.n_window_list) == 0 else self.n_window_list[-1] + n_window)
-
-
-    def __getitem__(self, index):
-        # you can wirte your own processing code here
-        dataset_index = 0
-        while index >= self.n_window_list[dataset_index]:
-            dataset_index += 1
-
-        index = index - self.n_window_list[dataset_index - 1] if dataset_index > 0 else index
-        n_timepoint = (len(self.data_list[dataset_index]) - self.seq_len) // self.stride + 1
-
-        s_begin = index % n_timepoint
-        s_begin = self.stride * s_begin
-        s_end = s_begin + self.seq_len
-        seq_x = self.data_list[dataset_index][s_begin:s_end, :]
-
-        ctx = seq_x[:self.input_len, :]
-        target = seq_x[self.input_len:self.seq_len, :]
-
-        return torch.from_numpy(ctx).float().squeeze(-1), torch.from_numpy(target).float().squeeze(-1)
-
-    def __len__(self):
-        return self.n_window_list[-1]
+import os
 
 class SyntheticTimeSeriesDataset(Dataset):
     def __init__(self, seq_len=96, target_len=96, noise=True):
@@ -312,6 +236,12 @@ class TSMixUp(Dataset):
 
 class SyntheticGPTimeSeriesDataset(Dataset):
     def __init__(self, file_path="synthetic_timeseries_gp.npy", seq_len=1024, target_len=32):
+
+        if not os.path.exists(file_path):
+            print(f"File {file_path} not found. Generate the dataset first.")
+            from dataset import generate_gp_dataset
+            generate_gp_dataset()
+
         self.data = np.load(file_path)
         self.data = torch.tensor(self.data, dtype=torch.float32)
         self.seq_len = seq_len
@@ -329,16 +259,11 @@ class SyntheticGPTimeSeriesDataset(Dataset):
         target = sample[self.seq_len:self.seq_len + self.target_len]
         return ctx, target
     
-def artificial_dataset(seq_len=256, target_len=96, K=3, alpha=1.5, noise=True, file_path="/lustre/fswork/projects/rech/ulm/uww31rp/patchfm/data/synthetic_timeseries_gp.npy"):
+def artificial_dataset(seq_len=256, target_len=96, K=3, alpha=1.5, noise=True, file_path="data/synthetic_timeseries_gp.npy"):
     tsmixup_dataset = TSMixUp(seq_len=seq_len, target_len=target_len, K=K, alpha=alpha)
     artificial_dataset = SyntheticTimeSeriesDataset(seq_len=seq_len, target_len=target_len, noise=noise)
     gpdataset = SyntheticGPTimeSeriesDataset(file_path=file_path, seq_len=seq_len, target_len=target_len)
     return torch.utils.data.ConcatDataset([tsmixup_dataset, artificial_dataset, gpdataset])
-    
-def get_dataset(seq_len, target_len, utsd_name='UTSD-1G', noise=True, scale=False):
-    ds = SyntheticTimeSeriesDataset(seq_len=seq_len, target_len=target_len, noise=noise)
-    utsd = UTSDataset(subset_name=utsd_name, input_len=seq_len, output_len=target_len, scale=scale, flag='train', stride=1)
-    return torch.utils.data.ConcatDataset([ds, utsd])
 
 ### utils functions for dataset
 

@@ -9,7 +9,7 @@ from pytorch_lightning.loggers import WandbLogger
 import os
 
 from model import PatchFMLit
-from dataset import artificial_dataset, UTSDataset
+from dataset import get_dataset
 
 @hydra.main(version_base=None, config_path="conf", config_name="config")
 def main(cfg : DictConfig) -> None:
@@ -39,9 +39,7 @@ def main(cfg : DictConfig) -> None:
 
     model = PatchFMLit(config=cfg.model) 
 
-    art_trainset = artificial_dataset(seq_len=config_model.ws, target_len=config_model.patch_len, noise=True)
-    utsd_trainset = UTSDataset(input_len=config_model.ws, output_len=config_model.patch_len)
-    trainset = torch.utils.data.ConcatDataset([art_trainset, utsd_trainset])
+    trainset = get_dataset(seq_len=config_model.ws, target_len=config_model.patch_len)
     trainloader = torch.utils.data.DataLoader(trainset, batch_size=settings.batch_size, shuffle=True,
                                                 num_workers=settings.num_workers, pin_memory=settings.pin_memory)
     config_model["len_loader"] = len(trainloader)
@@ -51,9 +49,9 @@ def main(cfg : DictConfig) -> None:
         enable_checkpointing=True,
         log_every_n_steps=10,
         accelerator="gpu",
-        devices=int(os.environ['SLURM_GPUS_ON_NODE']),
-        num_nodes=int(os.environ['SLURM_NNODES']),
-        strategy="ddp",
+        devices=settings.gpus,
+        num_nodes=settings.num_nodes,
+        strategy=settings.strategy,
         fast_dev_run=False,
         callbacks=[checkpoint_callback],
         logger=wandb_logger

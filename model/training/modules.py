@@ -1,69 +1,8 @@
 import torch
 import torch.nn as nn
-from einops import rearrange
-import lightning as L
-import torch.optim as optim
 from rotary_embedding_torch import RotaryEmbedding
-
-import torch
-import torch.nn as nn
-
-class RevIN(nn.Module):
-    def __init__(self, eps=1e-5):
-        super().__init__()
-        self.eps = eps
-        self.cached_mean = None
-        self.cached_std = None
-
-    def forward(self, x, mode: str):
-        assert x.dim() == 3, "Input tensor must be (batch, n_patches, patch_len)"
-
-        # Cast to float64 for stable statistics computation
-        x64 = x.double()
-
-        if mode == "norm":
-            mean, std = self._get_statistics(x64)
-            self.cached_mean, self.cached_std = mean.detach(), std.detach()
-            out = (x64 - mean) / std
-
-        elif mode == "denorm":
-            assert self.cached_mean is not None and self.cached_std is not None, \
-                "Call forward(..., 'norm') before 'denorm'"
-            out = x64 * self.cached_std + self.cached_mean
-
-        elif mode == "denorm_last":
-            assert self.cached_mean is not None and self.cached_std is not None, \
-                "Call forward(..., 'norm') before 'denorm'"
-            out = x64 * self.cached_std[:, -1:] + self.cached_mean[:, -1:]
-
-        else:
-            raise NotImplementedError(f"Mode '{mode}' not implemented.")
-
-        # Convert back to float32 for compatibility with main model
-        return out.float()
-
-    def _get_statistics(self, x):
-        """
-        Numerically stable mean and variance computation using 
-        incremental mean and variance along the patch dimension.
-        x: (B, P, L) float64
-        Returns: mean, std (both (B, P, 1))
-        """
-        B, P, L = x.shape
-        counts = torch.arange(1, P+1, device=x.device).view(1, P, 1) * L
-
-        # Incrementally compute mean
-        cumsum_x = torch.cumsum(x.sum(dim=-1, keepdim=True), dim=1)
-        mean = cumsum_x / counts
-
-        # Variance: mean of squared deviations from the mean
-        # Efficient incremental formula:
-        # var_i = (sum(x^2) - 2*mean*sum(x) + count*mean^2)/count
-        cumsum_x2 = torch.cumsum((x**2).sum(dim=-1, keepdim=True), dim=1)
-        var = (cumsum_x2 - 2 * mean * cumsum_x + counts * mean**2) / counts
-        std = torch.sqrt(var + self.eps)
-
-        return mean, std
+from einops import rearrange
+from model.training.revin import RevIN
 
 class ResidualBlock(nn.Module):
     def __init__(self, in_dim, hid_dim, out_dim, dropout=0.):
@@ -169,7 +108,7 @@ class TransformerEncoder(nn.Module):
         for layer in self.layers:
             x = layer(x)
         return self.norm(x)
-
+    
 class PatchFM(nn.Module): 
     def __init__(self, seq_len, patch_len, d_model, n_heads, n_layers_encoder, dropout=0.1, quantiles=None):
         super().__init__()
@@ -224,67 +163,3 @@ class PatchFM(nn.Module):
             return forecasting, x_patch
         else:
             return forecasting
-
-class MultiQuantileLoss(nn.Module):
-    def __init__(self, quantiles):
-        super().__init__()
-
-        if not isinstance(quantiles, torch.Tensor):
-            quantiles = torch.tensor(quantiles)
-
-        assert all(0 < q < 1 for q in quantiles), "Quantiles must be in the range (0, 1)"
-        self.quantiles = quantiles
-
-    def forward(self, pred, target):
-        assert pred.shape[-1] == len(self.quantiles)
-        assert target.shape[1] == pred.shape[1] # n_patches
-        assert target.shape[2] == pred.shape[2] # patch_len
-        self.quantiles = self.quantiles.to(pred.device)
-        target = target.unsqueeze(-1) 
-        errors = target - pred
-        losses = torch.max((self.quantiles - 1) * errors, self.quantiles * errors)
-        return losses.mean()
-
-class PatchFMLit(L.LightningModule):
-    def __init__(self, config):
-        super().__init__()
-        
-        assert config.epochs >= config.epochs_warmups, "epochs must be greater than epochs_warmups"
-        assert config.n_warmups > 0, "n_warmups must be greater than 0"
-        assert config.epochs_warmups % config.n_warmups == 0, "number of warmups epochs must be divisible by n_warmups"
-
-        self.model = PatchFM(
-            seq_len=config.ws, 
-            patch_len=config.patch_len, 
-            d_model=config.d_model, 
-            n_heads=config.n_heads, 
-            n_layers_encoder=config.n_layers_encoder, 
-            dropout=config.dropout, 
-            quantiles=config.quantiles
-        )
-
-        self.criterion = MultiQuantileLoss(self.model.quantiles)
-        
-        self.ctx = [config.ws // config.n_warmups * i for i in range(1, config.n_warmups + 1)]
-        self.n_epochs = config.epochs_warmups // config.n_warmups
-
-        self.save_hyperparameters(config)
-
-    def training_step(self, batch, batch_idx):
-        x, y = batch
-
-        current_epoch = self.current_epoch
-        ctx = self.ctx[current_epoch // self.n_epochs if current_epoch < len(self.ctx) * self.n_epochs else -1]
-        x = x[:, -ctx:]
-
-        prediction, x_patch = self.model(x)
-        y = y.unsqueeze(1)
-        y = torch.cat([x_patch, y], dim=1)    
-        loss = self.criterion(prediction, y)
-        self.log("train_loss", loss, sync_dist=True)
-        return loss
-    
-    def configure_optimizers(self):
-        optimizer = optim.AdamW(self.parameters(), lr=self.hparams.lr, betas=(0.9, 0.98), eps=1e-9, weight_decay=1e-6)
-        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=self.hparams.epochs, eta_min=0)
-        return {"optimizer": optimizer, "lr_scheduler": scheduler}
