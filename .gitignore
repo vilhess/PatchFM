@@ -9,3 +9,4 @@ notebooks/inference.ipynb
 *.DS_Store
 hf_push.ipynb
 cur_res.md
+figures/
