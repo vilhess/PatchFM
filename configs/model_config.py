@@ -10,7 +10,7 @@ class PatchFMConfig:
 
     # for inference
     load_from_hub: bool = False
-    ckpt_path: str = "../ckpts/huge_v3.pth"
+    ckpt_path: str = "./ckpts/huge_v3.pth"
     compile: bool = False
 
     def __getitem__(self, key):

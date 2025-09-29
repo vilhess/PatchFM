@@ -35,3 +35,6 @@ class PatchFMLit(L.LightningModule):
         optimizer = optim.AdamW(self.parameters(), lr=self.hparams.lr, betas=(0.9, 0.98), eps=1e-9, weight_decay=1e-6)
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=self.hparams.epochs, eta_min=0)
         return {"optimizer": optimizer, "lr_scheduler": scheduler}
+    
+    def on_train_epoch_end(self):
+        torch.save(self.model.state_dict(), self.hparams.ckpt_path)
