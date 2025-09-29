@@ -1,0 +1,85 @@
+# A tutorial on how to build a Foundation Model for Univariate Time Series Forecasting
+
+
+A concise, reproducible recipe for training a transformer-based, patch-to-patch forecasting model for univariate time series. The approach mirrors Large Language Model (LLM) practices (next-token → next-patch) while remaining lightweight compared to a classic LLM and practical.
+
+## Highlights
+- Next-patch prediction objective (autoregressive, causal)
+- Patch-based representation of time series (tokens ↔ patches)
+- Causal masking self-attention with RoPE (relative positions)
+- RevIN (Reversible Instance Normalization) with causal statistics
+- SwiGLU feed-forward networks
+- Multi-quantile outputs (median + uncertainty bands)
+- Efficient rollout with KV caching
+
+## Method (TL;DR)
+- Patching: Split a context signal of length $w$ into $P_{num} = w / P_{len}$ patches of length $P_{len}$.
+- RevIN: Normalize patches using causal running mean/variance over past patches, and denormalize outputs to the original scale.
+- Architecture: Input residual MLP → stacked Transformer blocks (MHA + SwiGLU FFN, pre-norm, residual) → $|\mathcal{Q}|$ output heads mapping back to patch space.
+- Positional encoding: Rotary Position Embeddings (RoPE) applied to queries/keys.
+- Training: Multi-quantile (pinball) loss across positions, elements, and quantiles $\mathcal{Q}$.
+- Inference: Predict next patch; roll out autoregressively with KV caching for long horizons.
+
+## Problem Formulation
+Given context patches $x_{p_1}, \ldots, x_{p_n}$, predict the next patch $x_{p_{i+1}}$ for each position $i$ using only past patches (causality). The model outputs quantiles $\{\hat{x}_{p_{i+1}}^{(q)}: q \in \mathcal{Q}\}$ with median (q=0.5) as the point forecast.
+
+## Loss: Multi-Quantile (Pinball)
+For residual $u = x - \hat{x}^{(q)}$:
+$$\rho_q(u) = \begin{cases} q\,u, & u \ge 0,\\ (q-1)\,u, & u < 0. \end{cases}$$
+Aggregate over positions, patch elements, and quantiles.
+
+## Architecture
+- Input MLP: $\mathbb{R}^{P_{len}} \to \mathbb{R}^{dim}$ residual 2-layer MLP (ReLU)
+- Multi-Head Attention: causal mask, RoPE; queries/keys/values per head
+- FFN: SwiGLU (SiLU-gated), pre-norm + residual
+- Output heads: |Q| linear maps $\mathbb{R}^{dim} \to \mathbb{R}^{P_{len}}$ (one per quantile)
+
+### Model Details
+- Patch size: 32
+- Max context: 32 patches (1024 steps)
+- Forecast horizon: 32 steps per forward pass
+- Quantiles $\mathcal{Q}$: {0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9}
+- Layers: 6
+- Attention heads: 64 (head dim 32)
+- Model dim: 2048
+- Parameters: ~300M
+
+## Inference
+- Single step: predict next patch ($P_{len}$ values)
+- Long-horizon: append prediction to context and repeat (optionally drop oldest patch to keep window fixed)
+- KV caching: reuse cached keys/values for past patches; compute new Q/K/V only for the appended patch
+
+## Datasets
+- UTSD (Unified Time Series Dataset) [UTSD]: seven domains (Energy, IoT, Nature, Web, Health, Transport, Environment). We start with UTSD-1G (~55M series after preprocessing).
+- Artificial: ~1M synthetic series (sinusoidal, linear, polynomial, logarithmic) plus mixtures via TSMixup [Chronos]; Gaussian Process samples via KernelSynth (mixtures of RBF/periodic/linear kernels with swept hyperparameters).
+
+## Repository Layout
+
+- `model/training/` — main PatchFM model class
+
+  - `modules.py` - core modules (Residual Layers, MHA, SwiGLU, RoPE, Transformer Encoder, ...)
+  - `revin.py` — causal RevIN
+  - `loss.py` — multi-quantile (pinball) loss
+  - `trainer.py` — PyTorch Lightning trainer class
+
+- `model/inference/` — main PatchFM model class for inference with KV caching
+  - `modules.py` — core modules with caching support
+  - `forecaster.py` — Forecasting model with KV caching and rollout logic
+
+- `dataset/` — data loading and preprocessing
+  - `artificial.py` — synthetic dataset : artificial signals + TSMixup + KernelSynth
+  - `utsd.py` — Unified Time Series Dataset (UTSD) loading and preprocessing
+  - `get_data.py` — utility to fetch and preprocess datasets
+  - `generate_data.py` — utility to generate and save the KernelSynth dataset (long to generate)
+
+- `configs/` — model and training configurations
+- `notebooks/inference` — how to load a trained model and generate forecasts
+- `training.py` — training script using PyTorch Lightning
+
+## Getting Started (placeholder)
+- Install: create environment, install deps (PyTorch, numpy, pandas, etc.)
+- Train: run `train.py` with a UTSD config or synthetic config
+- Infer: run `infer.py` to generate forecasts (median or quantiles)
+
+## Citation
+If you use this work, please cite the paper ...
