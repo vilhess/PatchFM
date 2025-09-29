@@ -8,3 +8,4 @@ script_eval/
 notebooks/inference.ipynb
 *.DS_Store
 hf_push.ipynb
+cur_res.ipynb
