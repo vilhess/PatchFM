@@ -1,6 +1,5 @@
 # A tutorial on how to build a Foundation Model for Univariate Time Series Forecasting
 
-
 A concise, reproducible recipe for training a transformer-based, patch-to-patch forecasting model for univariate time series. The approach mirrors Large Language Model (LLM) practices (next-token → next-patch) while remaining lightweight compared to a classic LLM and practical.
 
 ## Highlights
@@ -11,6 +10,37 @@ A concise, reproducible recipe for training a transformer-based, patch-to-patch 
 - SwiGLU feed-forward networks
 - Multi-quantile outputs (median + uncertainty bands)
 - Efficient rollout with KV caching
+
+## Installation
+```bash
+git clone https://github.com/vilhess/PatchFM
+cd PatchFM
+pip install -r requirements.txt
+```
+
+## Quick Start
+
+```python 
+import torch
+from model import Forecaster
+from configs import PatchFMConfig
+
+# --- Instantiate model ---
+config = PatchFMConfig(load_from _hub=True)
+model = Forecaster(config)
+
+# --- Inference ---
+forecast_horizon = 64
+seq = torch.randn(1, 1024)  # (batch, time)
+pred_median, pred_quantiles = model(seq, forecast_horizon=forecast_horizon, quantiles=[0.1, 0.5, 0.9])  # (batch, time, quantiles)
+```
+
+We provide an extended quick start example in [notebooks/tutorial.ipynb](./notebooks/tutorial.ipynb).
+If you dont have suitable hardware you can run the the extended quick start example example also in Google Colab:
+
+<a target="_blank" href="https://colab.research.google.com/drive/17sdf-7luCkv5TaeLj3Z6kIaTDkwkz3VR?usp=share_link">
+  <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open Quick Start In Colab"/> 
+</a>
 
 ## Method (TL;DR)
 - Patching: Split a context signal of length $w$ into $P_{num} = w / P_{len}$ patches of length $P_{len}$.
@@ -76,10 +106,10 @@ Aggregate over positions, patch elements, and quantiles.
 - `notebooks/inference` — how to load a trained model and generate forecasts
 - `training.py` — training script using PyTorch Lightning
 
-## Getting Started (placeholder)
-- Install: create environment, install deps (PyTorch, numpy, pandas, etc.)
-- Train: run `train.py` with a UTSD config or synthetic config
-- Infer: run `infer.py` to generate forecasts (median or quantiles)
+## Acknowledgements
+We thank the authors of the following repositories for inspiration and code snippets:
+- [TiRex](https://github.com/NX-AI/tirex)
+
 
 ## Citation
 If you use this work, please cite the paper ...
