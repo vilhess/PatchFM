@@ -110,6 +110,15 @@ Aggregate over positions, patch elements, and quantiles.
 We thank the authors of the following repositories for inspiration and code snippets:
 - [TiRex](https://github.com/NX-AI/tirex)
 
+## Incoming Works
+
+- [ ] Improve performance: extend training duration, tune schedules, and explore larger effective batch sizes.  
+- [ ] Data scaling: train on larger corpora (e.g., UTSD-12G) and expand synthetic generators to broaden dynamics and scales.  
+- [ ] Benchmarking: evaluate on standard SOTA datasets with common metrics (e.g., MAE/MSE and quantile coverage) to compare against baselines.  
+- [ ] Ablations: gradually increase context length, RevIN (on/off and causal variants).  
+- [ ] Mixture of Experts: test sparse MoE in FFNs with routing.  
+- [ ] Implement LoRA for finetuning.  
+
 
 ## Citation
 If you use this work, please cite the paper ...
