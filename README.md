@@ -1,5 +1,7 @@
 # A tutorial on how to build a Foundation Model for Univariate Time Series Forecasting
 
+[Huggingface Model Card](https://huggingface.co/vilhess/PatchFM)
+
 A concise, reproducible recipe for training a transformer-based, patch-to-patch forecasting model for univariate time series. The approach mirrors Large Language Model (LLM) practices (next-token → next-patch) while remaining lightweight compared to a classic LLM and practical.
 
 ## Highlights
