@@ -96,9 +96,8 @@ class RevIN(nn.Module):
 
 
 class ResidualBlock(nn.Module):
-    def __init__(self, in_dim, hid_dim, out_dim, dropout=0.):
+    def __init__(self, in_dim, hid_dim, out_dim):
         super().__init__()
-        self.dropout = nn.Dropout(dropout)
         self.hidden_layer = nn.Linear(in_dim, hid_dim)
         self.output_layer = nn.Linear(hid_dim, out_dim)
         self.residual_layer = nn.Linear(in_dim, out_dim)
@@ -112,7 +111,7 @@ class ResidualBlock(nn.Module):
         return out
 
 class MultiHeadAttention(nn.Module):
-    def __init__(self, d_model, n_heads, dropout=0.1):
+    def __init__(self, d_model, n_heads, last=False):
         super().__init__()
         assert d_model%n_heads==0, f"d_model ({d_model}) must be divisible by n_heads ({n_heads})"
 
@@ -122,8 +121,6 @@ class MultiHeadAttention(nn.Module):
 
         self.out_proj = nn.Linear(d_model, d_model)
 
-        self.dropout = dropout
-
         self.head_dim = d_model//n_heads
         self.n_heads = n_heads
 
@@ -131,6 +128,8 @@ class MultiHeadAttention(nn.Module):
 
         self.k_cache = None
         self.v_cache = None
+
+        self.last = last
     
     def forward(self, q):
         bs, context, dim = q.size()
@@ -140,12 +139,17 @@ class MultiHeadAttention(nn.Module):
         k = q
         v = q
 
+        if self.last:
+            q = q[:, -1:, :]
+            is_causal = False
+            offset += (context - 1)
+
         q = self.WQ(q).reshape(bs, -1, self.n_heads, self.head_dim).transpose(1, 2)
         k = self.WK(k).reshape(bs, -1, self.n_heads, self.head_dim).transpose(1, 2)
         v = self.WV(v).reshape(bs, -1, self.n_heads, self.head_dim).transpose(1, 2)
 
         if self.k_cache is not None and self.v_cache is not None:
-            offset = self.k_cache.size(2)
+            offset += self.k_cache.size(2)
             is_causal = False
             k = torch.cat([self.k_cache, k], dim=2)
             v = torch.cat([self.v_cache, v], dim=2)
@@ -167,7 +171,7 @@ class MultiHeadAttention(nn.Module):
         self.v_cache = None
     
 class FeedForward(nn.Module):
-    def __init__(self, d_model, dropout=0.1, multiple_of=256):
+    def __init__(self, d_model, multiple_of=256):
         super().__init__()
 
         hidden_dim = d_model*4
@@ -179,20 +183,19 @@ class FeedForward(nn.Module):
         self.w3 = nn.Linear(d_model, hidden_dim, bias=False)
 
         self.act = nn.SiLU()
-        self.dp = nn.Dropout(dropout)
 
     def forward(self, x):
         x = self.w2(self.act(self.w1(x)) * self.w3(x))
-        return self.dp(x)
+        return x
 
 
 class TransformerEncoderLayer(nn.Module):
-    def __init__(self, d_model, n_heads, dropout):
+    def __init__(self, d_model, n_heads, last=False):
         super().__init__()
         self.ln1 = nn.LayerNorm(d_model)
-        self.attn = MultiHeadAttention(d_model=d_model, n_heads=n_heads, dropout=dropout)
+        self.attn = MultiHeadAttention(d_model=d_model, n_heads=n_heads, last=last)
         self.ln2 = nn.LayerNorm(d_model)
-        self.ff = FeedForward(d_model=d_model, dropout=dropout)
+        self.ff = FeedForward(d_model=d_model)
     
     def forward(self, x):
         out_attn = self.attn(self.ln1((x)))
@@ -201,14 +204,15 @@ class TransformerEncoderLayer(nn.Module):
         return out
     
 class TransformerEncoder(nn.Module):
-    def __init__(self, d_model, n_heads, n_layers, dropout=0.1):
+    def __init__(self, d_model, n_heads, n_layers):
         super().__init__()
         self.layers = nn.ModuleList(
             [
-                TransformerEncoderLayer(d_model=d_model, n_heads=n_heads, dropout=dropout)
-                for _ in range(n_layers)
+                TransformerEncoderLayer(d_model=d_model, n_heads=n_heads)
+                for _ in range(n_layers-1)
             ]
         )
+        self.layers.append(TransformerEncoderLayer(d_model=d_model, n_heads=n_heads, last=True))
         self.norm = nn.LayerNorm(d_model)
 
     def forward(self, x):
