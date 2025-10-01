@@ -10,3 +10,5 @@ notebooks/inference.ipynb
 hf_push.ipynb
 cur_res.md
 figures/
+model_jz.py
+test/
