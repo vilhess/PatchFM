@@ -9,9 +9,9 @@ class PatchFMConfig:
     quantiles: list[float] = field(default_factory=lambda: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9])
 
     # for inference
-    load_from_hub: bool = False
-    ckpt_path: str = "./ckpts/huge_v4.pth"
-    compile: bool = False
+    load_from_hub: bool = True
+    ckpt_path: str = "./ckpts/huge_v7.pth"
+    compile: bool = True
 
     def __getitem__(self, key):
         return getattr(self, key)
