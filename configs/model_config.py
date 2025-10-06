@@ -2,6 +2,7 @@ from dataclasses import dataclass, field, asdict
 
 @dataclass
 class PatchFMConfig:
+    max_seq_len: int = 1024
     patch_len: int = 32
     d_model: int = 2048
     n_heads: int = 64

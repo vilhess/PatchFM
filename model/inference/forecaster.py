@@ -10,6 +10,7 @@ class Forecaster(nn.Module):
         super().__init__()
 
         # Store config
+        self.max_seq_len = config["max_seq_len"]
         self.patch_len = config["patch_len"]
         self.d_model = config["d_model"]
         self.n_heads = config["n_heads"]
@@ -72,6 +73,11 @@ class Forecaster(nn.Module):
         if x.ndim != 2:
             x = x.unsqueeze(0)
         bs, ws = x.size()
+
+        if ws > self.max_seq_len:
+            print(f"Warning: Input length {ws} exceeds max_seq_len {self.max_seq_len}. Truncating input.")
+            x = x[:, -self.max_seq_len:]
+            ws = self.max_seq_len
 
         # Pad so length is divisible by patch_len
         pad = (self.patch_len - ws % self.patch_len) % self.patch_len
