@@ -4,7 +4,6 @@
 *.pth
 __pycache__/
 archive/
-script_eval/
 notebooks/inference.ipynb
 *.DS_Store
 hf_push.ipynb
@@ -13,3 +12,6 @@ figures/
 model_jz.py
 test/
 notebooks/attention_visualization.ipynb
+
+script_eval/*
+!script_eval/fev_eval.py
