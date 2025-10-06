@@ -12,3 +12,4 @@ cur_res.md
 figures/
 model_jz.py
 test/
+notebooks/attention_visualization.ipynb
