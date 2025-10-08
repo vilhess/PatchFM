@@ -84,7 +84,7 @@ if __name__ == "__main__":
     model = Forecaster(config)
 
     benchmark = fev.Benchmark.from_yaml(
-        "https://raw.githubusercontent.com/autogluon/fev/refs/heads/main/benchmarks/chronos_zeroshot/tasks.yaml"
+        "https://raw.githubusercontent.com/autogluon/fev/refs/heads/main/benchmarks/fev_bench/tasks.yaml"
     )
     summaries = []
     for task in tqdm(benchmark.tasks[:num_tasks]):
