@@ -124,6 +124,11 @@ class Forecaster(nn.Module):
 
         self.clear_cache()
 
+        if torch.any(torch.isnan(pred_median)) or torch.any(torch.isinf(pred_median)):
+            print("Warning: NaN or Inf values detected in predictions. Returning zeros.")
+            pred_median = torch.zeros_like(pred_median)
+            pred_quantiles = torch.zeros_like(pred_quantiles)
+
         return pred_median, pred_quantiles
 
     def __call__(self, context: torch.Tensor, forecast_horizon: int | None = None, quantiles: list[float] | None = None) -> torch.Tensor:
