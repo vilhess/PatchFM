@@ -13,6 +13,7 @@ model_jz.py
 test/
 notebooks/attention_visualization.ipynb
 results/
+python_package/
 
 script_eval/*
 !script_eval/fev_eval.py
