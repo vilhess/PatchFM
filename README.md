@@ -28,7 +28,7 @@ from model import Forecaster
 from configs import PatchFMConfig
 
 # --- Instantiate model ---
-config = PatchFMConfig(load_from _hub=True)
+config = PatchFMConfig(load_from_hub=True)
 model = Forecaster(config)
 
 # --- Inference ---
