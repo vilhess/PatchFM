@@ -34,7 +34,7 @@ model = Forecaster(config)
 # --- Inference ---
 forecast_horizon = 64
 seq = torch.randn(1, 1024)  # (batch, time)
-pred_median, pred_quantiles = model(seq, forecast_horizon=forecast_horizon, quantiles=[0.1, 0.5, 0.9])  # (batch, time, quantiles)
+pred_median, pred_quantiles = model(seq, forecast_horizon=forecast_horizon, quantiles=[0.1, 0.5, 0.9])  #  (batch, time), (batch, time, quantiles)
 ```
 
 We provide an extended quick start example in [notebooks/tutorial.ipynb](./notebooks/tutorial.ipynb).
