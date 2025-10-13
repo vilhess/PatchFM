@@ -13,14 +13,17 @@ A concise, reproducible recipe for training a transformer-based, patch-to-patch 
 - Multi-quantile outputs (median + uncertainty bands)
 - Efficient rollout with KV caching
 
-## Installation
+## Quick Start
+
+### from source code
+
+1. Clone the repository and install dependencies
 ```bash
 git clone https://github.com/vilhess/PatchFM
 cd PatchFM
 pip install -r requirements.txt
 ```
-
-## Quick Start
+2. Run inference with a pretrained model from Huggingface Hub
 
 ```python 
 import torch
@@ -35,6 +38,21 @@ model = Forecaster(config)
 forecast_horizon = 64
 seq = torch.randn(1, 1024)  # (batch, time)
 pred_median, pred_quantiles = model(seq, forecast_horizon=forecast_horizon, quantiles=[0.1, 0.5, 0.9])  #  (batch, time), (batch, time, quantiles)
+```
+
+### from pip package
+
+1. Install the package from PyPI
+```bash
+pip install patchfm
+```
+2. Run inference with a pretrained model from Huggingface Hub
+
+```python 
+import torch
+from patchfm import PatchFMConfig, Forecaster
+
+# same as above
 ```
 
 We provide an extended quick start example in [notebooks/tutorial.ipynb](./notebooks/tutorial.ipynb).
