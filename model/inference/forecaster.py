@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 from einops import rearrange
-from model.inference.modules import RevIN, ResidualBlock, TransformerEncoder, PatchFM
+from model.inference.modules import RevIN, ResidualBlock, TransformerEncoder, PatchFM, SeqTypeConverter
 
 
 # --- Forecaster Model ---
@@ -37,6 +37,8 @@ class Forecaster(nn.Module):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.to(self.device)
 
+        self.converter = SeqTypeConverter()
+
         if config["compile"]:
             self = torch.compile(self)
 
@@ -68,11 +70,16 @@ class Forecaster(nn.Module):
     
     @torch.inference_mode()
     def forecast(self, x: torch.Tensor, forecast_horizon: int | None = None, quantiles: list[float] | None = None) -> torch.Tensor: 
-        x = x.to(self.device)
-        # Ensure input shape (bs, length)
+        x = self.converter.convert(x)
+        assert x.ndim in (1, 2), f"Input dimension must be 1D (time) or 2D (batch, time), got {x.ndim}D."
+
+        batch_dim=True
         if x.ndim != 2:
             x = x.unsqueeze(0)
+            batch_dim=False
         bs, ws = x.size()
+
+        x = x.to(self.device)
 
         if ws > self.max_seq_len:
             print(f"Warning: Input length {ws} exceeds max_seq_len {self.max_seq_len}. Truncating input.")
@@ -128,7 +135,12 @@ class Forecaster(nn.Module):
             print("Warning: NaN or Inf values detected in predictions. Returning zeros.")
             pred_median = torch.zeros_like(pred_median)
             pred_quantiles = torch.zeros_like(pred_quantiles)
+        
+        if not batch_dim:
+            pred_median = pred_median.squeeze(0)
+            pred_quantiles = pred_quantiles.squeeze(0)   
 
+        pred_median, pred_quantiles = self.converter.deconvert(pred_median, pred_quantiles)
         return pred_median, pred_quantiles
 
     def __call__(self, context: torch.Tensor, forecast_horizon: int | None = None, quantiles: list[float] | None = None) -> torch.Tensor:
@@ -143,6 +155,16 @@ class Forecaster(nn.Module):
 # --- Plotting Utility ---
 import matplotlib.pyplot as plt
 def plot_forecast(context, median, quantiles=None, target_pred=None, context_plot_limit=100):
+
+    # convert to tensor
+    if not isinstance(context, torch.Tensor):
+        context = torch.tensor(context, dtype=torch.float32)
+    if not isinstance(median, torch.Tensor):
+        median = torch.tensor(median, dtype=torch.float32)
+    if quantiles is not None and not isinstance(quantiles, torch.Tensor):
+        quantiles = torch.tensor(quantiles, dtype=torch.float32)
+    if target_pred is not None and not isinstance(target_pred, torch.Tensor):
+        target_pred = torch.tensor(target_pred, dtype=torch.float32)
 
     if median.ndim>1:
         assert median.shape[0]==1

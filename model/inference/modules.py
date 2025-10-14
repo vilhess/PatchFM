@@ -5,6 +5,61 @@ import torch.nn as nn
 from einops import rearrange
 from rotary_embedding_torch import RotaryEmbedding
 from huggingface_hub import PyTorchModelHubMixin
+import numpy as np
+
+class SeqTypeConverter:
+    def __init__(self):
+        self.init_type = None
+    
+    def convert(self, seq):
+        if isinstance(seq, torch.Tensor):
+            self.init_type = 'torch'
+            return seq
+        
+        elif isinstance(seq, np.ndarray):
+            self.init_type = 'numpy'
+            return torch.from_numpy(seq)
+        
+        elif isinstance(seq, list):
+            if all(isinstance(x, torch.Tensor) for x in seq):
+                self.init_type = 'list_of_tensors'
+                try:
+                    return torch.stack(seq)
+                except Exception:
+                    raise ValueError("All tensors in the list must have the same shape to stack.")
+            else:
+                self.init_type = 'list'
+                return torch.tensor(seq)
+        
+        else:
+            raise ValueError(f"Unsupported type: {type(seq)}")
+
+    def deconvert(self, seq, quantiles):
+        seq = seq.detach().cpu()
+        quantiles = quantiles.detach().cpu()
+        
+        if self.init_type == 'torch':
+            return self._ensure_torch(seq), self._ensure_torch(quantiles)
+        
+        elif self.init_type == 'numpy':
+            return self._ensure_numpy(seq), self._ensure_numpy(quantiles)
+        
+        elif self.init_type == 'list':
+            return seq.tolist(), quantiles.tolist()
+        
+        elif self.init_type == 'list_of_tensors':
+            seqs = list(seq.unbind(0))
+            quants = list(quantiles.unbind(0))
+            return seqs, quants
+        
+        else:
+            raise ValueError(f"Unsupported type: {self.init_type}")
+    
+    def _ensure_torch(self, x):
+        return x if isinstance(x, torch.Tensor) else torch.tensor(x)
+
+    def _ensure_numpy(self, x):
+        return x if isinstance(x, np.ndarray) else np.array(x)
 
 def fill_nan_with_last_observed(x):
     bs, pn, pl = x.size()
