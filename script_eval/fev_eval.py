@@ -4,13 +4,7 @@ import datasets
 import pandas as pd
 import torch
 
-import sys
-
-from tqdm import tqdm
-sys.path.append("..")
-
-from model import Forecaster
-from configs import PatchFMConfig
+from patchfm import Forecaster, PatchFMConfig
 
 import fev
 
@@ -87,7 +81,7 @@ if __name__ == "__main__":
         "https://raw.githubusercontent.com/autogluon/fev/refs/heads/main/benchmarks/fev_bench/tasks.yaml"
     )
     summaries = []
-    for task in tqdm(benchmark.tasks[:num_tasks]):
+    for task in benchmark.tasks[:num_tasks]:
         predictions, inference_time, extra_info = predict_with_model(model, task)
         evaluation_summary = task.evaluation_summary(
             predictions,
