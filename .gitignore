@@ -5,6 +5,7 @@
 __pycache__/
 archive/
 notebooks/inference.ipynb
+notebooks/profiler.ipynb
 *.DS_Store
 hf_push.ipynb
 cur_res.md

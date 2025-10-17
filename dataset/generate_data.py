@@ -63,8 +63,8 @@ def generate_gp_dataset():
 
     # Gaussian Process Time Series Generation
     
-    total_samples = 100_000
-    n_jobs = cpu_count() - 1  # Leave one core free
+    total_samples = 160000
+    n_jobs = cpu_count() - 4  # Leave some core free
 
     with parallel_backend("loky"):  # 'loky' is the default and best for sklearn
         results = Parallel(n_jobs=n_jobs)(
@@ -72,6 +72,9 @@ def generate_gp_dataset():
         )
 
     np_array = np.array(results, dtype=np.float32)  # shape: (total_samples, 1056)
-    np.save("synthetic_timeseries_gp.npy", np_array)
+    np.save("../data/synthetic_timeseries_gp.npy", np_array)
 
     print(f"Finished Gaussian Process Time Series Generation.")
+
+if __name__ == "__main__":
+    generate_gp_dataset()
