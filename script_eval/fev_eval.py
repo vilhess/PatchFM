@@ -74,7 +74,7 @@ if __name__ == "__main__":
     model_name = "PatchFM"
     num_tasks = None  # replace with `num_tasks = None` to run on all tasks
 
-    config = PatchFMConfig(compile=True, load_from_hub=True)
+    config = PatchFMConfig(compile=True)
     model = Forecaster(config)
 
     benchmark = fev.Benchmark.from_yaml(
