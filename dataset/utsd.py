@@ -9,8 +9,8 @@ from tqdm import tqdm
 # 'UTSD-1G', 'UTSD-2G', 'UTSD-4G', 'UTSD-12G',
 
 class UTSDataset(Dataset):
-    def __init__(self, subset_name=r'UTSD-1G', flag='train', split=0.9,
-                 input_len=None, output_len=None, scale=False, stride=1):
+    def __init__(self, subset_name=r'UTSD-12G', flag='train', split=0.9,
+                 input_len=None, output_len=None, scale=False, stride=32):
         self.input_len = input_len
         self.output_len = output_len
         self.seq_len = input_len + output_len
