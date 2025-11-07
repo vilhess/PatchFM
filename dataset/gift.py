@@ -239,6 +239,7 @@ class GiftEvalPretrain(Dataset):
         self.output_len = output_len
         self.seq_len = input_len + output_len
         self.stride = stride
+        self.path = path
 
         gift_eval_path = Path(path)
         if not os.path.exists(gift_eval_path.as_posix()):
@@ -277,7 +278,7 @@ class GiftEvalPretrain(Dataset):
         print('Indexing dataset...')
         for item in tqdm(self.dataset_name):
             try:
-                dataset = DatasetGiftEval(name=item, term="long", to_univariate=True)
+                dataset = DatasetGiftEval(name=item, term="long", to_univariate=True, storage_dir=self.path)
                 train_data_iter = dataset.training_dataset
                 iter_dataset = iter(train_data_iter)
                 while True:
@@ -324,5 +325,5 @@ class GiftEvalPretrain(Dataset):
         return self.n_window_list[-1]
 
 if __name__ == "__main__":
-    dataset = GiftEvalPretrain(path="../data/giftpretrain/", input_len=128, output_len=64, stride=32)
+    dataset = GiftEvalPretrain(path="/home/svilhes/Bureau/giftdataset/gifteval", input_len=128, output_len=32, stride=32)
     print(len(dataset))
