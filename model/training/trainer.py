@@ -32,9 +32,31 @@ class PatchFMLit(L.LightningModule):
         return loss
     
     def configure_optimizers(self):
-        optimizer = optim.AdamW(self.parameters(), lr=self.hparams.lr, betas=(0.9, 0.98), eps=1e-9, weight_decay=1e-6)
-        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=self.hparams.epochs, eta_min=0)
-        return {"optimizer": optimizer, "lr_scheduler": scheduler}
+        
+        optimizer = optim.AdamW(self.parameters(), lr=self.hparams.start_lr, weight_decay=0.01)
+
+        div_factor = self.hparams.max_lr / self.hparams.start_lr
+        final_div_factor = self.hparams.start_lr / self.hparams.lower_lr
+        pct_start = self.hparams.reach_max / self.hparams.iter_cycle
+        onecycle = torch.optim.lr_scheduler.OneCycleLR(
+            optimizer, 
+            max_lr=self.hparams.max_lr, 
+            total_steps=self.hparams.iter_cycle, 
+            pct_start=pct_start,
+            div_factor=div_factor,
+            final_div_factor=final_div_factor
+        )
+        constant = torch.optim.lr_scheduler.ConstantLR(optimizer, factor=self.hparams.lower_lr/self.hparams.start_lr, total_iters=1e8)
+        scheduler = torch.optim.lr_scheduler.SequentialLR(optimizer, schedulers=[onecycle, constant], milestones=[self.hparams.iter_cycle])
+
+        return {
+            "optimizer": optimizer, 
+            "lr_scheduler": {
+                "scheduler": scheduler,
+                "interval": "step",  
+                "frequency": 1,       
+            }
+        }
     
     def on_train_epoch_end(self):
         torch.save(self.model.state_dict(), self.hparams.ckpt_path)

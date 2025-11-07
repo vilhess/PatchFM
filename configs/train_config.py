@@ -5,8 +5,12 @@ class TrainConfig:
 
     seq_len: int = 1024
     epochs: int = 150
-    lr: float = 1e-4
-    dropout: float = 0.15
+    start_lr: float = 1e-5
+    max_lr: float = 5e-4
+    lower_lr: float = 1e-5
+    reach_max: int = 10_000
+    iter_cycle: int = 100_000
+    dropout: float = 0.1
     batch_size: int = 256
 
     checkpoint_path: str = "./ckpts/"

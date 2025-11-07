@@ -154,7 +154,7 @@ class Forecaster(nn.Module):
 
 # --- Plotting Utility ---
 import matplotlib.pyplot as plt
-def plot_forecast(context, median, quantiles=None, target_pred=None, context_plot_limit=100):
+def plot_forecast(context, median, quantiles=None, target_pred=None, context_plot_limit=100, save_path=None):
 
     # convert to tensor
     if not isinstance(context, torch.Tensor):
@@ -203,4 +203,6 @@ def plot_forecast(context, median, quantiles=None, target_pred=None, context_plo
     plt.title('Forecasting with PatchFM')
     plt.xlabel('Time Steps')
     plt.ylabel('Value')
+    if save_path is not None:
+        plt.savefig(save_path)
     plt.show()

@@ -40,8 +40,8 @@ def compose_kernels(k1, k2, op):
     return k1 + k2 if op == '+' else k1 * k2
 
 
-def generate_synthetic_timeseries(_):
-    lsyn = 1024 + 32
+def generate_synthetic_timeseries(size):
+    lsyn = size
     J = 5
 
     j = np.random.randint(1, J + 1)
@@ -59,7 +59,7 @@ def generate_synthetic_timeseries(_):
     return y
 
 
-def generate_gp_dataset():
+def generate_gp_dataset(size=1056):
 
     # Gaussian Process Time Series Generation
     
@@ -68,7 +68,7 @@ def generate_gp_dataset():
 
     with parallel_backend("loky"):  # 'loky' is the default and best for sklearn
         results = Parallel(n_jobs=n_jobs)(
-            delayed(generate_synthetic_timeseries)(i) for i in tqdm(range(total_samples))
+            delayed(generate_synthetic_timeseries)(size) for i in tqdm(range(total_samples))
         )
 
     np_array = np.array(results, dtype=np.float32)  # shape: (total_samples, 1056)

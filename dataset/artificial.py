@@ -240,7 +240,7 @@ class SyntheticGPTimeSeriesDataset(Dataset):
         if not os.path.exists(file_path):
             print(f"File {file_path} not found. Generate the dataset first.")
             from dataset import generate_gp_dataset
-            generate_gp_dataset()
+            generate_gp_dataset(size=seq_len+target_len)
 
         self.data = np.load(file_path)
         self.data = torch.tensor(self.data, dtype=torch.float32)
@@ -259,7 +259,7 @@ class SyntheticGPTimeSeriesDataset(Dataset):
         target = sample[self.seq_len:self.seq_len + self.target_len]
         return ctx, target
     
-def artificial_dataset(seq_len=256, target_len=96, K=3, alpha=1.5, noise=True, file_path="data/synthetic_timeseries_gp.npy"):
+def artificial_dataset(seq_len=256, target_len=96, K=3, alpha=1.5, noise=True, file_path="data/synthetic_timeseries_full.npy"):
     tsmixup_dataset = TSMixUp(seq_len=seq_len, target_len=target_len, K=K, alpha=alpha)
     artificial_dataset = SyntheticTimeSeriesDataset(seq_len=seq_len, target_len=target_len, noise=noise)
     gpdataset = SyntheticGPTimeSeriesDataset(file_path=file_path, seq_len=seq_len, target_len=target_len)

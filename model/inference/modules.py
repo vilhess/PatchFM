@@ -93,6 +93,7 @@ class RevIN(nn.Module):
             mean, std = self._get_statistics(x64)
             self.cached_mean, self.cached_std = mean[:, -1:].detach(), std[:, -1:].detach()
             out = (x64 - mean) / std
+            out = torch.asinh(out)
             
             nan_idx = out.isnan()
             if nan_idx.any():
@@ -101,7 +102,7 @@ class RevIN(nn.Module):
         elif mode == "denorm_last":
             assert self.cached_mean is not None and self.cached_std is not None, \
                 "Call forward(..., 'norm') before 'denorm'"
-            out = x64 * self.cached_std + self.cached_mean
+            out = torch.sinh(x64) * self.cached_std + self.cached_mean
 
         else:
             raise NotImplementedError(f"Mode '{mode}' not implemented.")
