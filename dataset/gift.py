@@ -323,7 +323,3 @@ class GiftEvalPretrain(Dataset):
 
     def __len__(self):
         return self.n_window_list[-1]
-
-if __name__ == "__main__":
-    dataset = GiftEvalPretrain(path="/home/svilhes/Bureau/giftdataset/gifteval", input_len=1024, output_len=32, stride=32)
-    print(len(dataset))
