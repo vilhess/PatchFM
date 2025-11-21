@@ -1,0 +1,55 @@
+import torch
+import matplotlib.pyplot as plt
+
+def plot_forecast(context, median, quantiles=None, target_pred=None, context_plot_limit=100, save_path=None):
+
+    # convert to tensor
+    if not isinstance(context, torch.Tensor):
+        context = torch.tensor(context, dtype=torch.float32)
+    if not isinstance(median, torch.Tensor):
+        median = torch.tensor(median, dtype=torch.float32)
+    if quantiles is not None and not isinstance(quantiles, torch.Tensor):
+        quantiles = torch.tensor(quantiles, dtype=torch.float32)
+    if target_pred is not None and not isinstance(target_pred, torch.Tensor):
+        target_pred = torch.tensor(target_pred, dtype=torch.float32)
+
+    if median.ndim>1:
+        assert median.shape[0]==1
+        median = median[0]
+    if quantiles is not None and quantiles.ndim>2:
+        assert quantiles.shape[0]==1
+        quantiles = quantiles[0]
+    if target_pred is not None and target_pred.ndim>1:
+        assert target_pred.shape[0]==1
+        target_pred = target_pred[0]
+    if context.ndim>1:
+        assert context.shape[0]==1
+        context = context[0]
+    
+    if quantiles is not None:
+        assert quantiles.shape[1]==3, f"Error for Plot: Currently plot works only for 3 quantiles (lower, median, upper), got {quantiles.shape[1]}"
+
+    if median.device != torch.device('cpu'):
+        median = median.cpu()
+    if quantiles is not None and quantiles.device != torch.device('cpu'):
+        quantiles = quantiles.cpu()
+    if target_pred is not None and target_pred.device != torch.device('cpu'):
+        target_pred = target_pred.cpu()
+    if context.device != torch.device('cpu'):
+        context = context.cpu()
+
+    plt.figure(figsize=(12, 6))
+    plt.plot(range(len(context))[-context_plot_limit:], context[-context_plot_limit:], label='Context', color='blue')
+    plt.plot(range(len(context), len(context) + len(median)), median, label='Median Forecast', color='orange')
+    if quantiles is not None:
+        plt.fill_between(range(len(context), len(context) + len(median)), quantiles[:, 0], quantiles[:, 2], color='orange', alpha=0.3, label='Quantiles')
+    if target_pred is not None:
+        plt.plot(range(len(context), len(context) + len(target_pred)), target_pred, label='Target', color='green', linestyle='--')
+    plt.axvline(x=len(context)-1, color='black', linestyle='--', label='Forecast Start')
+    plt.legend()
+    plt.title('Forecasting with PatchFM')
+    plt.xlabel('Time Steps')
+    plt.ylabel('Value')
+    if save_path is not None:
+        plt.savefig(save_path)
+    plt.show()
