@@ -8,10 +8,9 @@ A concise, reproducible recipe for training a transformer-based, patch-to-patch 
 - Next-patch prediction objective (autoregressive, causal)
 - Patch-based representation of time series (tokens ↔ patches)
 - Causal masking self-attention with RoPE (relative positions)
-- RevIN (Reversible Instance Normalization) with causal statistics
+- RevIN (Reversible Instance Normalization)
 - SwiGLU feed-forward networks
 - Multi-quantile outputs (median + uncertainty bands)
-- Efficient rollout with KV caching
 
 ## Quick Start
 
@@ -64,11 +63,11 @@ If you dont have suitable hardware you can run the the extended quick start exam
 
 ## Method (TL;DR)
 - Patching: Split a context signal of length $w$ into $P_{num} = w / P_{len}$ patches of length $P_{len}$.
-- RevIN: Normalize patches using causal running mean/variance over past patches, and denormalize outputs to the original scale.
+- RevIN: Normalize input signal and denormalize outputs to the original scale.
 - Architecture: Input residual MLP → stacked Transformer blocks (MHA + SwiGLU FFN, pre-norm, residual) → $|\mathcal{Q}|$ output heads mapping back to patch space.
 - Positional encoding: Rotary Position Embeddings (RoPE) applied to queries/keys.
 - Training: Multi-quantile (pinball) loss across positions, elements, and quantiles $\mathcal{Q}$.
-- Inference: Predict next patch; roll out autoregressively with KV caching for long horizons.
+- Inference: Predict next patch; roll out autoregressively for long horizons.
 
 ## Problem Formulation
 Given context patches $x_{p_1}, \ldots, x_{p_n}$, predict the next patch $x_{p_{i+1}}$ for each position $i$ using only past patches (causality). The model outputs quantiles $\{\hat{x}_{p_{i+1}}^{(q)}: q \in \mathcal{Q}\}$ with median (q=0.5) as the point forecast.
@@ -97,10 +96,11 @@ Aggregate over positions, patch elements, and quantiles.
 ## Inference
 - Single step: predict next patch ($P_{len}$ values)
 - Long-horizon: append prediction to context and repeat (optionally drop oldest patch to keep window fixed)
-- KV caching: reuse cached keys/values for past patches; compute new Q/K/V only for the appended patch
 
 ## Datasets
-- UTSD (Unified Time Series Dataset) [UTSD]: seven domains (Energy, IoT, Nature, Web, Health, Transport, Environment). We start with UTSD-1G (~55M series after preprocessing).
+- UTSD (Unified Time Series Dataset) [UTSD]: seven domains (Energy, IoT, Nature, Web, Health, Transport, Environment). We work with UTSD-12G (~18M series after preprocessing).
+- GIFT-Eval pretraining dataset [GIFT]: aligned with the GIFT-Eval dataset but without data leakage issue with the benchmark. The dataset contains approximately 71 univariate and 17 multivariate time series datasets from various
+domains and various frequencies. After preprocessing, this yields approximately 600K univariate series. 
 - Artificial: ~1M synthetic series (sinusoidal, linear, polynomial, logarithmic) plus mixtures via TSMixup [Chronos]; Gaussian Process samples via KernelSynth (mixtures of RBF/periodic/linear kernels with swept hyperparameters).
 
 ## Repository Layout
@@ -112,13 +112,14 @@ Aggregate over positions, patch elements, and quantiles.
   - `loss.py` — multi-quantile (pinball) loss
   - `trainer.py` — PyTorch Lightning trainer class
 
-- `model/inference/` — main PatchFM model class for inference with KV caching
+- `model/inference/` — main PatchFM model class for inference 
   - `modules.py` — core modules with caching support
-  - `forecaster.py` — Forecasting model with KV caching and rollout logic
+  - `forecaster.py` — Forecasting model and rollout logic
 
 - `dataset/` — data loading and preprocessing
   - `artificial.py` — synthetic dataset : artificial signals + TSMixup + KernelSynth
   - `utsd.py` — Unified Time Series Dataset (UTSD) loading and preprocessing
+  - `gift.py` — GIFT-Eval pretraining dataset loading and preprocessing
   - `get_data.py` — utility to fetch and preprocess datasets
   - `generate_data.py` — utility to generate and save the KernelSynth dataset (long to generate)
 
