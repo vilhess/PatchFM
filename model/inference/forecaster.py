@@ -17,6 +17,7 @@ class Forecaster(nn.Module):
         self.n_layers_encoder = config["n_layers_encoder"]
         self.quantiles = config["quantiles"]
         self.n_quantiles = len(self.quantiles)
+        self.max_patches = self.max_seq_len // self.patch_len
 
         assert config["load_from_hub"] or config["ckpt_path"] is not None, (
             "Either load_from_hub must be True or ckpt_path must be provided."
@@ -102,13 +103,17 @@ class Forecaster(nn.Module):
 
         for _ in range(rollouts):
 
+            if x.size(1) > self.max_patches:
+                x = x[:, -self.max_patches:, :]
+                
+            init_x = x.clone()
             # Forward pass
             x = self.revin(x, mode="norm")
             x = self.proj_embedding(x)
             x = self.transformer_encoder(x)
             x = x[:, -1:, :]  # Keep only the last patch for autoregressive forecasting
             forecasting = self.proj_output(x)
-            forecasting = self.revin(forecasting, mode="denorm_last")
+            forecasting = self.revin(forecasting, mode="denorm")
 
             # Reshape to (bs, patch_num, patch_len, n_quantiles)
             forecasting = rearrange(
@@ -122,6 +127,8 @@ class Forecaster(nn.Module):
 
             # Append median patch for next rollout
             x = patch_median.clone()
+            x = torch.cat([init_x, x], dim=1)
+
         
         pred_quantiles = torch.cat(predictions, dim=1)
         pred_quantiles = pred_quantiles[:, :forecast_horizon, :]
@@ -147,10 +154,7 @@ class Forecaster(nn.Module):
         return self.forecast(context, forecast_horizon, quantiles)
     
     def clear_cache(self):
-        self.revin.clear_cache()
-        for layer in self.transformer_encoder.layers:
-            layer.attn.clear_cache()
-    
+        self.revin.clear_cache()    
 
 # --- Plotting Utility ---
 import matplotlib.pyplot as plt

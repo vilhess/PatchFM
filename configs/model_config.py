@@ -11,7 +11,7 @@ class PatchFMConfig:
 
     # for inference
     load_from_hub: bool = True
-    ckpt_path: str = "./ckpts/huge_v7.pth"
+    ckpt_path: str = None
     compile: bool = True
 
     def __getitem__(self, key):

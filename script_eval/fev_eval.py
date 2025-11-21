@@ -71,7 +71,7 @@ def predict_with_model(
 
 
 if __name__ == "__main__":
-    model_name = "PatchFM"
+    model_name = "PatchFM_nocausal"
     num_tasks = None  # replace with `num_tasks = None` to run on all tasks
 
     config = PatchFMConfig(compile=True)
@@ -85,7 +85,7 @@ if __name__ == "__main__":
         predictions, inference_time, extra_info = predict_with_model(model, task)
         evaluation_summary = task.evaluation_summary(
             predictions,
-            model_name="patchfm",
+            model_name=model_name,
             inference_time_s=inference_time,
             extra_info=extra_info,
         )
@@ -95,4 +95,4 @@ if __name__ == "__main__":
     # Show and save the results
     summary_df = pd.DataFrame(summaries)
     print(summary_df)
-    summary_df.to_csv("patchfm.csv", index=False)
+    summary_df.to_csv(f"results/{model_name}.csv", index=False)

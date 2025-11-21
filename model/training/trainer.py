@@ -46,7 +46,7 @@ class PatchFMLit(L.LightningModule):
             div_factor=div_factor,
             final_div_factor=final_div_factor
         )
-        constant = torch.optim.lr_scheduler.ConstantLR(optimizer, factor=self.hparams.lower_lr/self.hparams.start_lr, total_iters=1e8)
+        constant = torch.optim.lr_scheduler.ConstantLR(optimizer, factor=final_div_factor, total_iters=1e8)
         scheduler = torch.optim.lr_scheduler.SequentialLR(optimizer, schedulers=[onecycle, constant], milestones=[self.hparams.iter_cycle])
 
         return {
