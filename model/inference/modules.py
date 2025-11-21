@@ -73,6 +73,17 @@ def fill_nan_with_last_observed(x):
     x = rearrange(x, "(b pn) pl -> b pn pl", b=bs)
     return x
 
+def nanstd(o, dim, keepdim=False):
+    m = torch.nanmean(o, dim=dim, keepdim=True)
+    sq = (o - m) ** 2
+    n = torch.sum(~torch.isnan(o), dim=dim, keepdim=True).float()
+    n_safe = torch.clamp(n - 1, min=1.0)
+    var = torch.nansum(sq, dim=dim, keepdim=True) / n_safe
+    std = torch.sqrt(var)
+    if not keepdim:
+        std = std.squeeze(dim)
+    return std
+
 class RevIN(nn.Module):
     def __init__(self, eps=1e-5):
         super().__init__()
@@ -89,6 +100,9 @@ class RevIN(nn.Module):
             out = (x - mean) / std
             out = torch.asinh(out)
 
+            if torch.isnan(out).any():
+                out = fill_nan_with_last_observed(out)
+
         elif mode == "denorm":
             assert self.cached_mean is not None and self.cached_std is not None, \
                 "Call forward(..., 'norm') before 'denorm'"
@@ -99,8 +113,14 @@ class RevIN(nn.Module):
         return out
 
     def _get_statistics(self, x):
-        mean = x.mean(dim=(-1, -2), keepdim=True)
-        std = x.std(dim=(-1, -2), keepdim=True) + self.eps
+
+        if not x.isnan().any():
+            mean = x.mean(dim=(-1, -2), keepdim=True)
+            std = x.std(dim=(-1, -2), keepdim=True) + self.eps
+        
+        else:
+            mean = x.nanmean(dim=(-1, -2), keepdim=True)
+            std = nanstd(x, dim=(-1, -2), keepdim=True) + self.eps
         return mean, std
     
     def clear_cache(self):
