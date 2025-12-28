@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 from einops import rearrange
-from model.inference.modules import RevIN, ResidualBlock, TransformerEncoder, PatchFM, SeqTypeConverter
+from model.inference.modules import CausalRevIN, ResidualBlock, TransformerEncoder, PatchFM, SeqTypeConverter
 
 
 # --- Forecaster Model ---
@@ -45,7 +45,7 @@ class Forecaster(nn.Module):
 
     def _init_components(self):
         """Initialize modules from scratch."""
-        self.revin = RevIN()
+        self.revin = CausalRevIN()
         self.proj_embedding = ResidualBlock(
             in_dim=self.patch_len, 
             hid_dim=2 * self.patch_len, 
