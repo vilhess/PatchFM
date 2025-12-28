@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 from rotary_embedding_torch import RotaryEmbedding
 from einops import rearrange
-from model.training.revin import RevIN
+from model.training.revin import CausalRevIN
 
 class ResidualBlock(nn.Module):
     def __init__(self, in_dim, hid_dim, out_dim, dropout=0.):
@@ -118,7 +118,7 @@ class PatchFM(nn.Module):
         self.quantiles = quantiles if quantiles is not None else [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
         self.n_quantiles = len(self.quantiles)
 
-        self.revin = RevIN()
+        self.revin = CausalRevIN()
 
         self.proj_embedding = ResidualBlock(in_dim=patch_len, hid_dim=2*patch_len, out_dim=d_model, dropout=dropout)
         self.dp = nn.Dropout(dropout)
