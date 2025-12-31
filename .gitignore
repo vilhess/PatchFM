@@ -8,6 +8,7 @@ notebooks/inference.ipynb
 notebooks/profiler.ipynb
 *.DS_Store
 hf_push.ipynb
+gatedmhsa.ipynb
 cur_res.md
 figures/
 model_jz.py

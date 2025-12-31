@@ -63,11 +63,12 @@ If you dont have suitable hardware you can run the the extended quick start exam
 
 ## Method (TL;DR)
 - Patching: Split a context signal of length $w$ into $P_{num} = w / P_{len}$ patches of length $P_{len}$.
-- RevIN: Normalize input signal and denormalize outputs to the original scale.
+- Causal RevIN: Normalize input signal and denormalize outputs to the original scale without statistics leakage.
 - Architecture: Input residual MLP → stacked Transformer blocks (MHA + SwiGLU FFN, pre-norm, residual) → $|\mathcal{Q}|$ output heads mapping back to patch space.
 - Positional encoding: Rotary Position Embeddings (RoPE) applied to queries/keys.
 - Training: Multi-quantile (pinball) loss across positions, elements, and quantiles $\mathcal{Q}$.
 - Inference: Predict next patch; roll out autoregressively for long horizons.
+- KV-cache: during inference, cache keys/values to avoid redundant computations.
 
 ## Problem Formulation
 Given context patches $x_{p_1}, \ldots, x_{p_n}$, predict the next patch $x_{p_{i+1}}$ for each position $i$ using only past patches (causality). The model outputs quantiles $\{\hat{x}_{p_{i+1}}^{(q)}: q \in \mathcal{Q}\}$ with median (q=0.5) as the point forecast.

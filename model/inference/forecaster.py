@@ -106,7 +106,6 @@ class Forecaster(nn.Module):
             if x.size(1) > self.max_patches:
                 x = x[:, -self.max_patches:, :]
                 
-            init_x = x.clone()
             # Forward pass
             x = self.revin(x, mode="norm")
             x = self.proj_embedding(x)
@@ -127,8 +126,6 @@ class Forecaster(nn.Module):
 
             # Append median patch for next rollout
             x = patch_median.clone()
-            x = torch.cat([init_x, x], dim=1)
-
         
         pred_quantiles = torch.cat(predictions, dim=1)
         pred_quantiles = pred_quantiles[:, :forecast_horizon, :]
@@ -155,3 +152,5 @@ class Forecaster(nn.Module):
     
     def clear_cache(self):
         self.revin.clear_cache()    
+        for layer in self.transformer_encoder.layers:
+            layer.attn.clear_cache()  
