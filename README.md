@@ -11,6 +11,7 @@ A concise, reproducible recipe for training a transformer-based, patch-to-patch 
 - RevIN (Reversible Instance Normalization)
 - SwiGLU feed-forward networks
 - Multi-quantile outputs (median + uncertainty bands)
+- KV-cache for efficient long-horizon inference
 
 ## Quick Start
 
@@ -135,7 +136,7 @@ We thank the authors of the following repositories for inspiration and code snip
 ## Incoming Works
 
 - [ ] Improve performance: extend training duration, tune schedules, and explore larger effective batch sizes.  
-- [ ] Data scaling: train on larger corpora (e.g., UTSD-12G) and expand synthetic generators to broaden dynamics and scales.  
+- [ ] Data scaling: train on larger corpora and expand synthetic generators to broaden dynamics and scales.  
 - [ ] Benchmarking: evaluate on standard SOTA datasets with common metrics (e.g., MAE/MSE and quantile coverage) to compare against baselines.  
 - [ ] Ablations: gradually increase context length, RevIN (on/off and causal variants).  
 - [ ] Mixture of Experts: test sparse MoE in FFNs with routing.  
