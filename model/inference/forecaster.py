@@ -102,9 +102,6 @@ class Forecaster(nn.Module):
         predictions = []
 
         for _ in range(rollouts):
-
-            if x.size(1) > self.max_patches:
-                x = x[:, -self.max_patches:, :]
                 
             # Forward pass
             x = self.revin(x, mode="norm")
@@ -146,9 +143,127 @@ class Forecaster(nn.Module):
 
         pred_median, pred_quantiles = self.converter.deconvert(pred_median, pred_quantiles)
         return pred_median, pred_quantiles
+    
+    @torch.inference_mode()
+    def auto_regressive_quantile_decoding(self, x: torch.Tensor, forecast_horizon: int | None = None, quantiles: list[float] | None = None) -> torch.Tensor: 
 
-    def __call__(self, context: torch.Tensor, forecast_horizon: int | None = None, quantiles: list[float] | None = None) -> torch.Tensor:
-        return self.forecast(context, forecast_horizon, quantiles)
+        if forecast_horizon<=self.patch_len:
+            print("Warning: forecast_horizon is less than or equal to patch_len. Using standard forecast method instead.")
+            return self.forecast(x, forecast_horizon, quantiles)
+
+        print("Using Auto-Regressive Quantile Decoding... This may be slower because no KV-Caching.")
+        x = self.converter.convert(x)
+        assert x.ndim in (1, 2), f"Input dimension must be 1D (time) or 2D (batch, time), got {x.ndim}D."
+
+        batch_dim=True
+        if x.ndim != 2:
+            x = x.unsqueeze(0)
+            batch_dim=False
+        bs, ws = x.size()
+
+        x = x.to(self.device)
+
+        if ws > self.max_seq_len:
+            print(f"Warning: Input length {ws} exceeds max_seq_len {self.max_seq_len}. Truncating input.")
+            x = x[:, -self.max_seq_len:]
+            ws = self.max_seq_len
+
+        # Pad so length is divisible by patch_len
+        pad = (self.patch_len - ws % self.patch_len) % self.patch_len
+        if pad > 0:
+            x = torch.cat([x[:, :1].repeat(1, pad), x], dim=1)
+
+        # Default horizon = patch_len
+        forecast_horizon = forecast_horizon or self.patch_len
+
+        # Reshape into patches
+        x = rearrange(x, "b (pn pl) -> b pn pl", pl=self.patch_len)
+        context = x.clone()  
+
+        rollouts = -(-forecast_horizon // self.patch_len)  # ceil division
+        predictions = []
+
+        # 1st Forward pass
+        x = self.revin(x, mode="norm")
+        x = self.proj_embedding(x)
+        x = self.transformer_encoder(x)
+        x = x[:, -1:, :]  # Keep only the last patch for autoregressive forecasting
+
+        forecasting = self.proj_output(x)
+        forecasting = self.revin(forecasting, mode="denorm")
+
+        # Reshape to (bs, patch_num, patch_len, n_quantiles)
+        forecasting = rearrange(
+            forecasting, "b 1 (pl q) -> b 1 pl q", 
+            pl=self.patch_len, q=self.n_quantiles
+        )
+
+        context_expanded = torch.repeat_interleave(context.unsqueeze(-1), repeats=self.n_quantiles, dim=-1) # batch x patch_num x patch_len x n_quantiles
+        base_context_expanded = torch.cat((context_expanded, forecasting), dim=1)
+        context_expanded = base_context_expanded.permute(0, 3, 1, 2).reshape(bs*self.n_quantiles, base_context_expanded.size(1), self.patch_len)       
+
+        x = context_expanded
+        q = torch.tensor(self.quantiles, device=self.device)
+
+        predictions.append(forecasting[:, -1, :, :])
+
+        self.clear_cache()
+
+        for _ in range(rollouts-1):
+                
+            # Forward pass
+            x = self.revin(x, mode="norm")
+            x = self.proj_embedding(x)
+            x = self.transformer_encoder(x)
+            x = x[:, -1:, :]  # Keep only the last patch for autoregressive forecasting
+            forecasting = self.proj_output(x)
+            forecasting = self.revin(forecasting, mode="denorm")
+
+            # Reshape to (bs*n_quantiles, patch_num, patch_len, n_quantiles)
+            forecasting = rearrange(
+                forecasting, "b 1 (pl q) -> b 1 pl q", 
+                pl=self.patch_len, q=self.n_quantiles
+            )
+
+            forecasting = rearrange(
+                forecasting, "(b q) 1 pl h -> b q 1 pl h", 
+                q=self.n_quantiles
+            )
+            forecasting = forecasting.permute(0, 2, 3, 1, 4).flatten(start_dim=-2)  # batch x 1 x patch_len x n_quantiles**2
+            forecasting = torch.quantile(forecasting, q, dim=-1) # n_quantiles x batch x 1 x patch_len
+            forecasting = forecasting.permute(1, 2, 3, 0) # batch x 1 x patch_len x n_quantiles
+
+            base_context_expanded = torch.cat((base_context_expanded, forecasting), dim=1)
+            context_expanded = base_context_expanded.permute(0, 3, 1, 2).reshape(bs*self.n_quantiles, base_context_expanded.size(1), self.patch_len)       
+
+            x = context_expanded
+            predictions.append(forecasting[:, -1, :, :])
+
+            self.clear_cache()
+
+        pred_quantiles = torch.cat(predictions, dim=1)
+        pred_quantiles = pred_quantiles[:, :forecast_horizon, :]
+        pred_median = pred_quantiles[:, :, 4]
+
+        pred_quantiles = pred_quantiles[..., [self.quantiles.index(q) for q in quantiles]] if quantiles is not None else pred_quantiles
+
+        if torch.any(torch.isnan(pred_median)) or torch.any(torch.isinf(pred_median)):
+            print("Warning: NaN or Inf values detected in predictions. Returning zeros.")
+            pred_median = torch.zeros_like(pred_median)
+            pred_quantiles = torch.zeros_like(pred_quantiles)
+        
+        if not batch_dim:
+            pred_median = pred_median.squeeze(0)
+            pred_quantiles = pred_quantiles.squeeze(0)   
+
+        pred_median, pred_quantiles = self.converter.deconvert(pred_median, pred_quantiles)
+        return pred_median, pred_quantiles
+
+    def __call__(self, context: torch.Tensor, forecast_horizon: int | None = None, quantiles: list[float] | None = None, quantile_decoding: bool = False) -> torch.Tensor:
+        if quantile_decoding:
+            return self.auto_regressive_quantile_decoding(context, forecast_horizon, quantiles)
+        else:
+            return self.forecast(context, forecast_horizon, quantiles)
     
     def clear_cache(self):
         self.revin.clear_cache()    

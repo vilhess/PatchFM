@@ -13,6 +13,7 @@ A concise, reproducible recipe for training a transformer-based, patch-to-patch 
 - SwiGLU feed-forward networks
 - Multi-quantile outputs (median + uncertainty bands)
 - KV-cache for efficient long-horizon inference
+- Autoregressive multi-quantile decoding [MOIRAI2.0](https://arxiv.org/pdf/2511.11698) (currently without KV-cache)
 
 ## Quick Start
 
@@ -38,7 +39,7 @@ model = Forecaster(config)
 # --- Inference ---
 forecast_horizon = 64
 seq = torch.randn(1, 1024)  # (batch, time)
-pred_median, pred_quantiles = model(seq, forecast_horizon=forecast_horizon, quantiles=[0.1, 0.5, 0.9])  #  (batch, time), (batch, time, quantiles)
+pred_median, pred_quantiles = model(seq, forecast_horizon=forecast_horizon, quantiles=[0.1, 0.5, 0.9], quantile_decoding=True)  #  (batch, time), (batch, time, quantiles)
 ```
 
 ### from pip package
@@ -133,16 +134,3 @@ domains and various frequencies. After preprocessing, this yields approximately 
 ## Acknowledgements
 We thank the authors of the following repositories for inspiration and code snippets:
 - [TiRex](https://github.com/NX-AI/tirex)
-
-## Incoming Works
-
-- [ ] Improve performance: extend training duration, tune schedules, and explore larger effective batch sizes.  
-- [ ] Data scaling: train on larger corpora and expand synthetic generators to broaden dynamics and scales.  
-- [ ] Benchmarking: evaluate on standard SOTA datasets with common metrics (e.g., MAE/MSE and quantile coverage) to compare against baselines.  
-- [ ] Ablations: gradually increase context length, RevIN (on/off and causal variants).  
-- [ ] Mixture of Experts: test sparse MoE in FFNs with routing.  
-- [ ] Implement LoRA for finetuning.  
-
-
-## Citation
-If you use this work, please cite the paper ...
