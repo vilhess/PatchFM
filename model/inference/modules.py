@@ -136,11 +136,14 @@ class CausalRevIN(nn.Module):
         counts = counts - nan_counts
     
         if self.cached_counts is not None:
+            factor = B//self.cached_counts.size(0)
+            self.cached_counts = self.cached_counts.repeat_interleave(factor, dim=0)
             counts += self.cached_counts
         self.cached_counts = counts[:, -1:, :]
 
         cumsum_x = torch.cumsum(x.nansum(dim=-1, keepdim=True), dim=1)
         if self.cached_cumsum_x is not None:
+            self.cached_cumsum_x = self.cached_cumsum_x.repeat_interleave(factor, dim=0)
             cumsum_x += self.cached_cumsum_x
         self.cached_cumsum_x = cumsum_x[:, -1:, :]
 
@@ -149,6 +152,7 @@ class CausalRevIN(nn.Module):
 
         cumsum_x2 = torch.cumsum((x**2).nansum(dim=-1, keepdim=True), dim=1)
         if self.cached_cumsum_x2 is not None:
+            self.cached_cumsum_x2 = self.cached_cumsum_x2.repeat_interleave(factor, dim=0)
             cumsum_x2 += self.cached_cumsum_x2
         self.cached_cumsum_x2 = cumsum_x2[:, -1:, :]
 
@@ -161,6 +165,8 @@ class CausalRevIN(nn.Module):
         self.cached_cumsum_x = None
         self.cached_cumsum_x2 = None
         self.cached_counts = None
+        self.cached_mean = None
+        self.cached_std = None
 
 class ResidualBlock(nn.Module):
     def __init__(self, in_dim, hid_dim, out_dim):
@@ -218,6 +224,9 @@ class MultiHeadAttention(nn.Module):
         if self.k_cache is not None and self.v_cache is not None:
             offset += self.k_cache.size(2)
             is_causal = False
+            factor = q.size(0) // self.k_cache.size(0)
+            self.k_cache = self.k_cache.repeat_interleave(factor, dim=0)
+            self.v_cache = self.v_cache.repeat_interleave(factor, dim=0)
             k = torch.cat([self.k_cache, k], dim=2)
             v = torch.cat([self.v_cache, v], dim=2)
 

@@ -1,4 +1,5 @@
 import torch
+import numpy as np
 import matplotlib.pyplot as plt
 
 def plot_forecast(context, median, quantiles=None, target_pred=None, context_plot_limit=100, save_path=None):
@@ -53,3 +54,11 @@ def plot_forecast(context, median, quantiles=None, target_pred=None, context_plo
     if save_path is not None:
         plt.savefig(save_path)
     plt.show()
+
+def flip_last_dim(x):
+    if isinstance(x, torch.Tensor):
+        return torch.flip(x, dims=[-1])
+    elif isinstance(x, np.ndarray):
+        return np.flip(x, axis=-1)
+    else:
+        raise TypeError(f"Unsupported type: {type(x)}")

@@ -11,9 +11,10 @@ A concise, reproducible recipe for training a transformer-based, patch-to-patch 
 - Causal masking self-attention with RoPE (relative positions)
 - RevIN (Reversible Instance Normalization)
 - SwiGLU feed-forward networks
-- Multi-quantile outputs (median + uncertainty bands)
+- Autoregressive multi-quantile decoding [MOIRAI2.0](https://arxiv.org/pdf/2511.11698)
 - KV-cache for efficient long-horizon inference
-- Autoregressive multi-quantile decoding [MOIRAI2.0](https://arxiv.org/pdf/2511.11698) (currently without KV-cache)
+- flip-invariance during inference (optional)
+
 
 ## Quick Start
 
@@ -39,22 +40,7 @@ model = Forecaster(config)
 # --- Inference ---
 forecast_horizon = 64
 seq = torch.randn(1, 1024)  # (batch, time)
-pred_median, pred_quantiles = model(seq, forecast_horizon=forecast_horizon, quantiles=[0.1, 0.5, 0.9], quantile_decoding=True)  #  (batch, time), (batch, time, quantiles)
-```
-
-### from pip package
-
-1. Install the package from PyPI
-```bash
-pip install patchfm
-```
-2. Run inference with a pretrained model from Huggingface Hub
-
-```python 
-import torch
-from patchfm import PatchFMConfig, Forecaster
-
-# same as above
+pred_median, pred_quantiles = model(seq, forecast_horizon=forecast_horizon, quantiles=[0.1, 0.5, 0.9], flip_invariance=True)  #  (batch, time), (batch, time, quantiles)
 ```
 
 We provide an extended quick start example in [notebooks/tutorial.ipynb](./notebooks/tutorial.ipynb).
@@ -72,6 +58,7 @@ If you dont have suitable hardware you can run the the extended quick start exam
 - Training: Multi-quantile (pinball) loss across positions, elements, and quantiles $\mathcal{Q}$.
 - Inference: Predict next patch; roll out autoregressively for long horizons.
 - KV-cache: during inference, cache keys/values to avoid redundant computations.
+- Flip-invariance: during inference, flip input sequence and average predictions to improve robustness (at cost of doubling inference time).
 
 ## Problem Formulation
 Given context patches $x_{p_1}, \ldots, x_{p_n}$, predict the next patch $x_{p_{i+1}}$ for each position $i$ using only past patches (causality). The model outputs quantiles $\{\hat{x}_{p_{i+1}}^{(q)}: q \in \mathcal{Q}\}$ with median (q=0.5) as the point forecast.
@@ -100,6 +87,60 @@ Aggregate over positions, patch elements, and quantiles.
 ## Inference
 - Single step: predict next patch ($P_{len}$ values)
 - Long-horizon: append prediction to context and repeat (optionally drop oldest patch to keep window fixed)
+- Flip-invariance [Reverso](https://arxiv.org/pdf/2602.17634v1): optionally flip input sequence and average predictions to improve robustness (at cost of doubling inference time):
+$$y = \frac{1}{2} \left( f(x) - f(-x) \right)$$
+
+- ### Autoregressive Inference with Quantile Forecasting ([Moirai 2.0](https://arxiv.org/pdf/2511.11698v1))
+During autoregressive inference, the model generates forecasted values patch by patch. At each time step, the predicted patch is fed back into the model as input for the next step. This iterative process continues until the desired forecast horizon is reached.
+
+When performing quantile forecasting, the situation becomes more complex. Instead of producing a single patch per step, the model outputs multiple patches corresponding to different quantiles (e.g., 0.1, 0.5, 0.9). Since the model expects a single patch for the next time step, it is not straightforward to feed all quantile predictions back into the model simultaneously.
+
+A common workaround is to feed only the median prediction (the 0.5 quantile) back into the model at each step. While this approach preserves the autoregressive structure, it discards the uncertainty information captured by the other quantiles.
+
+An alternative approach is **autoregressive multi-quantile decoding**, as proposed in [Moirai 2.0](https://arxiv.org/pdf/2511.11698v1). This method enables consistent autoregressive generation while preserving the full predictive distribution across quantiles. However, it is computationally more expensive than the median-only approach as it requires duplicating the context for each quantile.
+
+The algorithm proceeds as follows:
+
+1. **Initialization**  
+   Start with the initial context window of observed data  
+   **Shape:** `(BS × L)`  
+   - `BS`: batch size  
+   - `L`: context length  
+   - `P`: patch size  
+   - `Q`: number of quantiles  
+   - `H`: forecast horizon  
+   - `i=1`: current algorithm step
+
+2. **First Quantile Prediction (Forward Pass)**  
+   Predict the quantiles for the next patch using the current context.  
+   **Output shape:** `(BS × P × Q)`
+
+3. **Context Duplication**  
+   For each predicted quantile, create a separate context by appending the corresponding predicted patch to the current context.  
+   This increases the number of contexts by a factor of `Q` at each step.  
+   **New context shape:** `(BS × Q × i(L + P))`
+
+4. **Next Forward Pass**  
+   For each duplicated context, predict the quantiles of the next patch.  
+   **Output shape:** `(BS × Q × P × Q)`
+
+5. **Quantile Collapse**  
+   - Permute and reshape the predictions to aggregate all possible quantile paths:  
+     **Intermediate shape:** `(BS × P × Q²)`  
+   - Compute the quantiles across the `Q²` predictions to obtain the final quantile estimates for the next patch.  
+     **Final shape:** `(BS × P × Q)`
+   - Increment the step counter `i ← i + 1`.
+
+6. **Iteration**  
+   Repeat Steps 3–5 until the forecast horizon `H` is reached, i.e., until the total number of predicted time steps satisfies  
+   `i × P ≥ H`.
+
+This procedure preserves predictive uncertainty across quantiles while maintaining the autoregressive structure of the model. Although it is computationally more expensive than feeding only the median prediction (0.5 quantile) back into the model, it remains tractable in practice and enables consistent multi-quantile forecasting.
+
+⚠️ **Warning**  
+With this strategy, the median prediction (0.5 quantile) does **not necessarily** match the prediction obtained by autoregressively feeding only the median patch back into the model at each step.
+
+This discrepancy arises because the *quantile collapse* step aggregates predictions across all possible quantile paths. As a result, the median is computed from the combined multi-path distribution rather than from a single deterministic trajectory, which can lead to different estimates compared to the single-path (median-only) autoregressive approach.
 
 ## Datasets
 - UTSD (Unified Time Series Dataset) [UTSD]: seven domains (Energy, IoT, Nature, Web, Health, Transport, Environment). We work with UTSD-12G (~18M series after preprocessing).
