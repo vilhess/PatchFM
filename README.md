@@ -1,8 +1,5 @@
 # A tutorial on how to build a Foundation Model for Univariate Time Series Forecasting
 
-[Huggingface Model Card](https://huggingface.co/vilhess/PatchFM)
-[Paper Model Card](https://github.com/vilhess/PatchFM/blob/main/main.pdf)
-
 A concise, reproducible recipe for training a transformer-based, patch-to-patch forecasting model for univariate time series. The approach mirrors Large Language Model (LLM) practices (next-token → next-patch) while remaining lightweight compared to a classic LLM and practical.
 
 ## Highlights
@@ -13,7 +10,7 @@ A concise, reproducible recipe for training a transformer-based, patch-to-patch 
 - SwiGLU feed-forward networks
 - Autoregressive multi-quantile decoding [MOIRAI2.0](https://arxiv.org/pdf/2511.11698)
 - KV-cache for efficient long-horizon inference
-- flip-invariance during inference (optional)
+- flip-es during inference (optional)
 
 
 ## Quick Start
@@ -40,7 +37,7 @@ model = Forecaster(config)
 # --- Inference ---
 forecast_horizon = 64
 seq = torch.randn(1, 1024)  # (batch, time)
-pred_median, pred_quantiles = model(seq, forecast_horizon=forecast_horizon, quantiles=[0.1, 0.5, 0.9], flip_invariance=True)  #  (batch, time), (batch, time, quantiles)
+pred_median, pred_quantiles = model(seq, forecast_horizon=forecast_horizon, quantiles=[0.1, 0.5, 0.9], flip_equivariance=True)  #  (batch, time), (batch, time, quantiles)
 ```
 
 We provide an extended quick start example in [notebooks/tutorial.ipynb](./notebooks/tutorial.ipynb).
@@ -58,7 +55,7 @@ If you dont have suitable hardware you can run the the extended quick start exam
 - Training: Multi-quantile (pinball) loss across positions, elements, and quantiles $\mathcal{Q}$.
 - Inference: Predict next patch; roll out autoregressively for long horizons.
 - KV-cache: during inference, cache keys/values to avoid redundant computations.
-- Flip-invariance: during inference, flip input sequence and average predictions to improve robustness (at cost of doubling batch size).
+- Flip-equivariance: during inference, flip input sequence and average predictions to improve robustness (at cost of doubling batch size).
 
 ## Problem Formulation
 Given context patches $x_{p_1}, \ldots, x_{p_n}$, predict the next patch $x_{p_{i+1}}$ for each position $i$ using only past patches (causality). The model outputs quantiles $\{\hat{x}_{p_{i+1}}^{(q)}: q \in \mathcal{Q}\}$ with median (q=0.5) as the point forecast.
@@ -87,7 +84,7 @@ Aggregate over positions, patch elements, and quantiles.
 ## Inference
 - Single step: predict next patch ($P_{len}$ values)
 - Long-horizon: append prediction to context and repeat (optionally drop oldest patch to keep window fixed)
-- Flip-invariance [Reverso](https://arxiv.org/pdf/2602.17634v1): optionally flip input sequence and average predictions to improve robustness (at cost of doubling batch size):
+- Flip-equivariance [Reverso](https://arxiv.org/pdf/2602.17634v1): optionally flip input sequence and average predictions to improve robustness (at cost of doubling batch size):
 $$y = \frac{1}{2} \left( f(x) - f(-x) \right)$$
 
 - ### Autoregressive Inference with Quantile Forecasting ([Moirai 2.0](https://arxiv.org/pdf/2511.11698v1))
