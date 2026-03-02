@@ -58,7 +58,7 @@ If you dont have suitable hardware you can run the the extended quick start exam
 - Training: Multi-quantile (pinball) loss across positions, elements, and quantiles $\mathcal{Q}$.
 - Inference: Predict next patch; roll out autoregressively for long horizons.
 - KV-cache: during inference, cache keys/values to avoid redundant computations.
-- Flip-invariance: during inference, flip input sequence and average predictions to improve robustness (at cost of doubling inference time).
+- Flip-invariance: during inference, flip input sequence and average predictions to improve robustness (at cost of doubling batch size).
 
 ## Problem Formulation
 Given context patches $x_{p_1}, \ldots, x_{p_n}$, predict the next patch $x_{p_{i+1}}$ for each position $i$ using only past patches (causality). The model outputs quantiles $\{\hat{x}_{p_{i+1}}^{(q)}: q \in \mathcal{Q}\}$ with median (q=0.5) as the point forecast.
@@ -87,7 +87,7 @@ Aggregate over positions, patch elements, and quantiles.
 ## Inference
 - Single step: predict next patch ($P_{len}$ values)
 - Long-horizon: append prediction to context and repeat (optionally drop oldest patch to keep window fixed)
-- Flip-invariance [Reverso](https://arxiv.org/pdf/2602.17634v1): optionally flip input sequence and average predictions to improve robustness (at cost of doubling inference time):
+- Flip-invariance [Reverso](https://arxiv.org/pdf/2602.17634v1): optionally flip input sequence and average predictions to improve robustness (at cost of doubling batch size):
 $$y = \frac{1}{2} \left( f(x) - f(-x) \right)$$
 
 - ### Autoregressive Inference with Quantile Forecasting ([Moirai 2.0](https://arxiv.org/pdf/2511.11698v1))

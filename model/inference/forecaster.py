@@ -171,10 +171,13 @@ class Forecaster(nn.Module):
 
     def __call__(self, context: torch.Tensor, forecast_horizon: int | None = None, quantiles: list[float] | None = None, flip_equivariance: bool = False) -> torch.Tensor:
         if flip_equivariance:
-            print("Flip equivariance enabled: forecast = (f(x) - f(-x)) / 2. This requires two forward passes (Reverso: Efficient Time Series Foundation Models for Zero-shot Forecasting).")
+            print("Flip equivariance enabled: forecast = (f(x) - f(-x)) / 2. This requires multiplying by 2 the batch size (Reverso: Efficient Time Series Foundation Models for Zero-shot Forecasting).")
+            bs = context.size(0)
             context_flipped = -context
-            pred_median, pred_quantiles = self.auto_regressive_quantile_decoding(context, forecast_horizon, quantiles)
-            pred_median2, pred_quantiles2 = self.auto_regressive_quantile_decoding(context_flipped, forecast_horizon, quantiles)
+            concat_context = torch.cat([context, context_flipped], dim=0)
+            pred_median_full, pred_quantiles_full = self.auto_regressive_quantile_decoding(concat_context, forecast_horizon, quantiles)
+            pred_median, pred_quantiles = pred_median_full[:bs], pred_quantiles_full[:bs]
+            pred_median2, pred_quantiles2 = pred_median_full[bs:], pred_quantiles_full[bs:]
             pred_median = (pred_median - pred_median2) / 2
             pred_quantiles = (pred_quantiles - flip_last_dim(pred_quantiles2)) / 2
         else:
