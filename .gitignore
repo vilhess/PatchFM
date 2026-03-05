@@ -4,8 +4,10 @@
 *.pth
 __pycache__/
 archive/
+notebooks/figs/
 notebooks/inference.ipynb
 notebooks/profiler.ipynb
+notebooks/animation_quantile_decoding.ipynb
 *.DS_Store
 hf_push.ipynb
 gatedmhsa.ipynb
