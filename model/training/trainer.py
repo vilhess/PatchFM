@@ -1,6 +1,7 @@
+import lightning as L
 import torch
 import torch.optim as optim
-import lightning as L
+
 from model.training.loss import MultiQuantileLoss
 from model.training.modules import PatchFM
 

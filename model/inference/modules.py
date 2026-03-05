@@ -1,11 +1,11 @@
 # Modules efficient for inference with caching
 
+import numpy as np
 import torch
 import torch.nn as nn
 from einops import rearrange
-from rotary_embedding_torch import RotaryEmbedding
 from huggingface_hub import PyTorchModelHubMixin
-import numpy as np
+from rotary_embedding_torch import RotaryEmbedding
 
 
 class SeqTypeConverter:

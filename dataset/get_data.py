@@ -1,7 +1,8 @@
 import torch
-from dataset.utsd import UTSDataset
+
 from dataset.artificial import artificial_dataset
 from dataset.gift import GiftEvalPretrain
+from dataset.utsd import UTSDataset
 
 
 def get_dataset(seq_len, target_len):

@@ -1,14 +1,15 @@
-import torch
-import lightning as L
-from lightning.pytorch.callbacks import ModelCheckpoint
-from lightning.pytorch import seed_everything
-import wandb
-from pytorch_lightning.loggers import WandbLogger
 from pprint import pprint
 
-from model import PatchFMLit
+import lightning as L
+import torch
+import wandb
+from lightning.pytorch import seed_everything
+from lightning.pytorch.callbacks import ModelCheckpoint
+from pytorch_lightning.loggers import WandbLogger
+
+from configs import PatchFMConfig, TrainConfig
 from dataset import get_dataset
-from configs import TrainConfig, PatchFMConfig
+from model import PatchFMLit
 
 
 def main():

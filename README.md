@@ -27,8 +27,9 @@ pip install -r requirements.txt
 
 ```python 
 import torch
-from model import Forecaster
+
 from configs import PatchFMConfig
+from model import Forecaster
 
 # --- Instantiate model ---
 config = PatchFMConfig(load_from_hub=True)
@@ -50,7 +51,8 @@ pip install patchfm
 
 ```python 
 import torch
-from patchfm import PatchFMConfig, Forecaster
+
+from patchfm import Forecaster, PatchFMConfig
 
 # same as above
 pred_median, pred_quantiles = model(seq, forecast_horizon=forecast_horizon, quantiles=[0.1, 0.5, 0.9], flip_equivariance=True)  #  (batch, time), (batch, time, quantiles)

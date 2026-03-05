@@ -1,7 +1,23 @@
+import math
+import os
+from enum import Enum
+from functools import cached_property
+from pathlib import Path
+from typing import Iterable, Iterator
+
+import datasets
+import pyarrow.compute as pc
 import torch
+from gluonts.dataset import DataEntry
+from gluonts.dataset.common import ProcessDataEntry
+from gluonts.dataset.split import TestData, TrainingDataset, split
+from gluonts.itertools import Map
+from gluonts.time_feature import norm_freq_str
+from gluonts.transform import Transformation
+from pandas.tseries.frequencies import to_offset
+from toolz import compose
 from torch.utils.data import Dataset
 from tqdm import tqdm, trange
-from pathlib import Path
 
 # Copyright (c) 2023, Salesforce, Inc.
 # SPDX-License-Identifier: Apache-2
@@ -18,23 +34,6 @@ from pathlib import Path
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
-import math
-from functools import cached_property
-from enum import Enum
-from pathlib import Path
-from typing import Iterable, Iterator
-
-import datasets
-from gluonts.dataset import DataEntry
-from gluonts.dataset.common import ProcessDataEntry
-from gluonts.dataset.split import TestData, TrainingDataset, split
-from gluonts.itertools import Map
-from gluonts.time_feature import norm_freq_str
-from gluonts.transform import Transformation
-from pandas.tseries.frequencies import to_offset
-import pyarrow.compute as pc
-from toolz import compose
 
 TEST_SPLIT = 0.1
 MAX_WINDOW = 20

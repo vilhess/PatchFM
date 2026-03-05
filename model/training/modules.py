@@ -1,7 +1,8 @@
 import torch
 import torch.nn as nn
-from rotary_embedding_torch import RotaryEmbedding
 from einops import rearrange
+from rotary_embedding_torch import RotaryEmbedding
+
 from model.training.revin import CausalRevIN
 
 

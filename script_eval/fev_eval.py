@@ -1,12 +1,11 @@
 import time
 
 import datasets
+import fev
 import pandas as pd
 import torch
 
 from patchfm import Forecaster, PatchFMConfig
-
-import fev
 
 datasets.disable_progress_bars()
 
