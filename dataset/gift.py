@@ -114,7 +114,7 @@ class DatasetGiftEval:
         to_univariate: bool = True,
         storage_dir: str = "/path/to/giftdataset/gifteval",
     ):
-      
+
         storage_path = Path(storage_dir)
         self.hf_dataset = datasets.load_from_disk(str(storage_path / name)).with_format(
             "numpy"
@@ -141,8 +141,8 @@ class DatasetGiftEval:
                 M4_PRED_LENGTH_MAP[freq] if "m4" in self.name else PRED_LENGTH_MAP[freq]
             )
         except:
-            if freq=="min":
-                freq="T"
+            if freq == "min":
+                freq = "T"
             pred_len = (
                 M4_PRED_LENGTH_MAP[freq] if "m4" in self.name else PRED_LENGTH_MAP[freq]
             )
@@ -233,8 +233,11 @@ class DatasetGiftEval:
         )
         return test_data
 
+
 class GiftEvalPretrain(Dataset):
-    def __init__(self, path="path/to/giftdataset/",input_len=None, output_len=None, stride=32):
+    def __init__(
+        self, path="path/to/giftdataset/", input_len=None, output_len=None, stride=32
+    ):
         self.input_len = input_len
         self.output_len = output_len
         self.seq_len = input_len + output_len
@@ -245,14 +248,20 @@ class GiftEvalPretrain(Dataset):
         if not os.path.exists(gift_eval_path.as_posix()):
             gift_eval_path.parent.mkdir(parents=True, exist_ok=True)
             import subprocess
-            subprocess.run([
-                "huggingface-cli", "download",
-                "Salesforce/GiftEvalPretrain",
-                "--repo-type=dataset",
-                "--local-dir", path,
-                "--cache-dir", path
-            ], check=True)
-            
+
+            subprocess.run(
+                [
+                    "huggingface-cli",
+                    "download",
+                    "Salesforce/GiftEvalPretrain",
+                    "--repo-type=dataset",
+                    "--local-dir",
+                    path,
+                    "--cache-dir",
+                    path,
+                ],
+                check=True,
+            )
 
         # Get all subdirectories (dataset names) in the GIFT_EVAL path
         dataset_names = []
@@ -275,28 +284,33 @@ class GiftEvalPretrain(Dataset):
         self.__read_data__()
 
     def __read_data__(self):
-        print('Indexing dataset...')
+        print("Indexing dataset...")
         for item in tqdm(self.dataset_name):
             try:
-                dataset = DatasetGiftEval(name=item, term="long", to_univariate=True, storage_dir=self.path)
+                dataset = DatasetGiftEval(
+                    name=item, term="long", to_univariate=True, storage_dir=self.path
+                )
                 train_data_iter = dataset.training_dataset
                 iter_dataset = iter(train_data_iter)
                 while True:
                     try:
                         subdataset = next(iter_dataset)
-                        data = subdataset['target'].reshape(-1, 1)
+                        data = subdataset["target"].reshape(-1, 1)
 
                         if torch.isnan(torch.from_numpy(data)).any():
                             continue
 
-
                         n_window = (len(data) - self.seq_len) // self.stride + 1
-                        
+
                         if n_window < 1:
                             continue
 
                         self.data_list.append(data)
-                        self.n_window_list.append(n_window if len(self.n_window_list) == 0 else self.n_window_list[-1] + n_window)
+                        self.n_window_list.append(
+                            n_window
+                            if len(self.n_window_list) == 0
+                            else self.n_window_list[-1] + n_window
+                        )
                     except:
                         break
             except Exception as e:
@@ -308,18 +322,26 @@ class GiftEvalPretrain(Dataset):
         while index >= self.n_window_list[dataset_index]:
             dataset_index += 1
 
-        index = index - self.n_window_list[dataset_index - 1] if dataset_index > 0 else index
-        n_timepoint = (len(self.data_list[dataset_index]) - self.seq_len) // self.stride + 1
+        index = (
+            index - self.n_window_list[dataset_index - 1]
+            if dataset_index > 0
+            else index
+        )
+        n_timepoint = (
+            len(self.data_list[dataset_index]) - self.seq_len
+        ) // self.stride + 1
 
         s_begin = index % n_timepoint
         s_begin = self.stride * s_begin
         s_end = s_begin + self.seq_len
         seq_x = self.data_list[dataset_index][s_begin:s_end, :]
 
-        ctx = seq_x[:self.input_len, :]
-        target = seq_x[self.input_len:self.seq_len, :]
+        ctx = seq_x[: self.input_len, :]
+        target = seq_x[self.input_len : self.seq_len, :]
 
-        return torch.from_numpy(ctx).float().squeeze(-1), torch.from_numpy(target).float().squeeze(-1)
+        return torch.from_numpy(ctx).float().squeeze(-1), torch.from_numpy(
+            target
+        ).float().squeeze(-1)
 
     def __len__(self):
         return self.n_window_list[-1]

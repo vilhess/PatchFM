@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field, asdict
 
+
 @dataclass
 class PatchFMConfig:
     max_seq_len: int = 1024
@@ -7,7 +8,9 @@ class PatchFMConfig:
     d_model: int = 2048
     n_heads: int = 64
     n_layers_encoder: int = 6
-    quantiles: list[float] = field(default_factory=lambda: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9])
+    quantiles: list[float] = field(
+        default_factory=lambda: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+    )
 
     # for inference
     load_from_hub: bool = True

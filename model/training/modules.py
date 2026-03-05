@@ -4,8 +4,9 @@ from rotary_embedding_torch import RotaryEmbedding
 from einops import rearrange
 from model.training.revin import CausalRevIN
 
+
 class ResidualBlock(nn.Module):
-    def __init__(self, in_dim, hid_dim, out_dim, dropout=0.):
+    def __init__(self, in_dim, hid_dim, out_dim, dropout=0.0):
         super().__init__()
         self.dropout = nn.Dropout(dropout)
         self.hidden_layer = nn.Linear(in_dim, hid_dim)
@@ -17,13 +18,16 @@ class ResidualBlock(nn.Module):
         hid = self.act(self.hidden_layer(x))
         out = self.output_layer(hid)
         res = self.residual_layer(x)
-        out = out+res
+        out = out + res
         return out
-    
+
+
 class MultiHeadAttention(nn.Module):
     def __init__(self, d_model, n_heads, dropout=0.1):
         super().__init__()
-        assert d_model%n_heads==0, f"d_model ({d_model}) must be divisible by n_heads ({n_heads})"
+        assert (
+            d_model % n_heads == 0
+        ), f"d_model ({d_model}) must be divisible by n_heads ({n_heads})"
 
         self.WQ = nn.Linear(d_model, d_model)
         self.WK = nn.Linear(d_model, d_model)
@@ -33,11 +37,11 @@ class MultiHeadAttention(nn.Module):
 
         self.dropout = dropout
 
-        self.head_dim = d_model//n_heads
+        self.head_dim = d_model // n_heads
         self.n_heads = n_heads
 
-        self.rope = RotaryEmbedding(dim=self.head_dim//2)
-    
+        self.rope = RotaryEmbedding(dim=self.head_dim // 2)
+
     def forward(self, q):
         bs, context, dim = q.size()
 
@@ -48,7 +52,7 @@ class MultiHeadAttention(nn.Module):
         k = self.WK(k).reshape(bs, -1, self.n_heads, self.head_dim).transpose(1, 2)
         v = self.WV(v).reshape(bs, -1, self.n_heads, self.head_dim).transpose(1, 2)
 
-        q  = self.rope.rotate_queries_or_keys(q)
+        q = self.rope.rotate_queries_or_keys(q)
         k = self.rope.rotate_queries_or_keys(k)
 
         values = nn.functional.scaled_dot_product_attention(
@@ -58,12 +62,13 @@ class MultiHeadAttention(nn.Module):
         values = values.transpose(1, 2).reshape(bs, -1, dim)
         values = self.out_proj(values)
         return values
-    
+
+
 class FeedForward(nn.Module):
     def __init__(self, d_model, dropout=0.1, multiple_of=256):
         super().__init__()
 
-        hidden_dim = d_model*4
+        hidden_dim = d_model * 4
         hidden_dim = int(2 * hidden_dim / 3)
         hidden_dim = multiple_of * ((hidden_dim + multiple_of - 1) // multiple_of)
 
@@ -83,22 +88,27 @@ class TransformerEncoderLayer(nn.Module):
     def __init__(self, d_model, n_heads, dropout):
         super().__init__()
         self.ln1 = nn.LayerNorm(d_model)
-        self.attn = MultiHeadAttention(d_model=d_model, n_heads=n_heads, dropout=dropout)
+        self.attn = MultiHeadAttention(
+            d_model=d_model, n_heads=n_heads, dropout=dropout
+        )
         self.ln2 = nn.LayerNorm(d_model)
         self.ff = FeedForward(d_model=d_model, dropout=dropout)
-    
+
     def forward(self, x):
         out_attn = self.attn(self.ln1((x)))
         x = x + out_attn
         out = x + self.ff(self.ln2(x))
         return out
-    
+
+
 class TransformerEncoder(nn.Module):
     def __init__(self, d_model, n_heads, n_layers, dropout=0.1):
         super().__init__()
         self.layers = nn.ModuleList(
             [
-                TransformerEncoderLayer(d_model=d_model, n_heads=n_heads, dropout=dropout)
+                TransformerEncoderLayer(
+                    d_model=d_model, n_heads=n_heads, dropout=dropout
+                )
                 for _ in range(n_layers)
             ]
         )
@@ -108,23 +118,39 @@ class TransformerEncoder(nn.Module):
         for layer in self.layers:
             x = layer(x)
         return self.norm(x)
-    
-class PatchFM(nn.Module): 
-    def __init__(self, patch_len, d_model, n_heads, n_layers_encoder, dropout=0.1, quantiles=None):
+
+
+class PatchFM(nn.Module):
+    def __init__(
+        self, patch_len, d_model, n_heads, n_layers_encoder, dropout=0.1, quantiles=None
+    ):
         super().__init__()
-        
+
         self.patch_len = patch_len
 
-        self.quantiles = quantiles if quantiles is not None else [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+        self.quantiles = (
+            quantiles
+            if quantiles is not None
+            else [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+        )
         self.n_quantiles = len(self.quantiles)
 
         self.revin = CausalRevIN()
 
-        self.proj_embedding = ResidualBlock(in_dim=patch_len, hid_dim=2*patch_len, out_dim=d_model, dropout=dropout)
+        self.proj_embedding = ResidualBlock(
+            in_dim=patch_len, hid_dim=2 * patch_len, out_dim=d_model, dropout=dropout
+        )
         self.dp = nn.Dropout(dropout)
-        self.transformer_encoder = TransformerEncoder(d_model=d_model, n_heads=n_heads, n_layers=n_layers_encoder, dropout=dropout)
+        self.transformer_encoder = TransformerEncoder(
+            d_model=d_model, n_heads=n_heads, n_layers=n_layers_encoder, dropout=dropout
+        )
 
-        self.proj_output = ResidualBlock(in_dim=d_model, hid_dim=2*d_model, out_dim=patch_len * self.n_quantiles, dropout=dropout)
+        self.proj_output = ResidualBlock(
+            in_dim=d_model,
+            hid_dim=2 * d_model,
+            out_dim=patch_len * self.n_quantiles,
+            dropout=dropout,
+        )
 
         self.init_weights()
 
@@ -137,24 +163,31 @@ class PatchFM(nn.Module):
             elif isinstance(m, nn.LayerNorm):
                 m.bias.data.fill_(0.0)
                 m.weight.data.fill_(1.0)
-    
-    def forward(self, x): 
+
+    def forward(self, x):
         bs, ws = x.size()
 
-        x = rearrange(x, "b (pn pl) -> b pn pl", pl=self.patch_len)  # Reshape to (bs, patch_num, patch_len)
+        x = rearrange(
+            x, "b (pn pl) -> b pn pl", pl=self.patch_len
+        )  # Reshape to (bs, patch_num, patch_len)
         if self.training:
             x_patch = x[:, 1:, :].clone().detach()
         x = self.revin(x, mode="norm")
 
-        x = self.proj_embedding(x) # bs, pn, d_model
+        x = self.proj_embedding(x)  # bs, pn, d_model
         x = self.dp(x)
-        x = self.transformer_encoder(x) # bs, pn, d_model
+        x = self.transformer_encoder(x)  # bs, pn, d_model
 
         forecasting = self.proj_output(x)  # bs, pn, patch_len * n_quantiles
 
         forecasting = self.revin(forecasting, mode="denorm")
 
-        forecasting = rearrange(forecasting, "b pn (pl q) -> b pn pl q", pl=self.patch_len, q=self.n_quantiles)  # Reshape to (bs, patch_len, n_quantiles)
+        forecasting = rearrange(
+            forecasting,
+            "b pn (pl q) -> b pn pl q",
+            pl=self.patch_len,
+            q=self.n_quantiles,
+        )  # Reshape to (bs, patch_len, n_quantiles)
 
         if self.training:
             return forecasting, x_patch
