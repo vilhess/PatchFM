@@ -40,6 +40,22 @@ seq = torch.randn(1, 1024)  # (batch, time)
 pred_median, pred_quantiles = model(seq, forecast_horizon=forecast_horizon, quantiles=[0.1, 0.5, 0.9], flip_equivariance=True)  #  (batch, time), (batch, time, quantiles)
 ```
 
+
+### from pip package
+1. Install the package from PyPI
+```bash
+pip install patchfm
+```
+2. Run inference with a pretrained model from Huggingface Hub
+
+```python 
+import torch
+from patchfm import PatchFMConfig, Forecaster
+
+# same as above
+pred_median, pred_quantiles = model(seq, forecast_horizon=forecast_horizon, quantiles=[0.1, 0.5, 0.9], flip_equivariance=True)  #  (batch, time), (batch, time, quantiles)
+```
+
 We provide an extended quick start example in [notebooks/tutorial.ipynb](./notebooks/tutorial.ipynb).
 If you dont have suitable hardware you can run the the extended quick start example example also in Google Colab:
 

@@ -18,5 +18,4 @@ results/
 python_package/
 data/giftpretrain/
 
-script_eval/*
-!script_eval/fev_eval.py
+script_eval/
