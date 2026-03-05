@@ -112,7 +112,7 @@ A common workaround is to feed only the median prediction (the 0.5 quantile) bac
 
 An alternative approach is **autoregressive multi-quantile decoding**, as proposed in [Moirai 2.0](https://arxiv.org/pdf/2511.11698v1). This method enables consistent autoregressive generation while preserving the full predictive distribution across quantiles. However, it is computationally more expensive than the median-only approach as it requires duplicating the context for each quantile.
 
-<div style="display: flex; gap: 20px; align-items: flex-start;">
+<div style="display: flex; gap: 10px; align-items: flex-start;">
   <div>
     <img src="assets/classic_forecast_animation.gif" alt="Classic Autoregressive Inference" width="350">
     <p style="text-align:center;">Classic Autoregressive Inference</p>
