@@ -25,9 +25,7 @@ class SyntheticTimeSeriesDataset(Dataset):
         def get_xs(seq_len, start=None):
             if start is None:
                 start = random.uniform(0, 1000)
-            xx = torch.linspace(
-                start, start + seq_len, seq_len
-            )
+            xx = torch.linspace(start, start + seq_len, seq_len)
             return xx
 
         # === Patterns ===
@@ -259,12 +257,13 @@ class SyntheticTimeSeriesDataset(Dataset):
     def __getitem__(self, idx):
         ctx, _ = self.samples[idx]
         if self.noise:
-            std = torch.std(ctx)*0.1
+            std = torch.std(ctx) * 0.1
             ctx += torch.randn_like(ctx) * std
         mean = ctx.mean()
         std = ctx.std() + 1e-6
         ctx = (ctx - mean) / std
         return ctx.float()
+
 
 def triangle_with_flat(xx, freq, slope, flat_ratio):
     period = freq
@@ -298,9 +297,7 @@ class TSMixUp(Dataset):
         def get_xs(seq_len, start=None):
             if start is None:
                 start = random.uniform(0, 1000)
-            xx = torch.linspace(
-                start, start + seq_len, seq_len
-            )
+            xx = torch.linspace(start, start + seq_len, seq_len)
             return xx[:seq_len]
 
         self.sinusoidal = []
@@ -452,9 +449,7 @@ class TSMixUp(Dataset):
             abscisse = 0
             scale = random.choice([1, 2, 5, 10, 50])
             sign = random.choice([-1, 1])
-            x_ctx = get_xs(
-                seq_len=seq_len, start=1
-            )  # éviter log(0)
+            x_ctx = get_xs(seq_len=seq_len, start=1)  # éviter log(0)
             ctx = abscisse + sign * torch.log(x_ctx * scale)
             self.logarithmic.append(ctx.float())
 
@@ -505,9 +500,7 @@ class TSMixUp(Dataset):
 
 
 class SyntheticGPTimeSeriesDataset(Dataset):
-    def __init__(
-        self, file_path="synthetic_timeseries_gp.npy", seq_len=1024
-    ):
+    def __init__(self, file_path="synthetic_timeseries_gp.npy", seq_len=1024):
 
         if not os.path.exists(file_path):
             print(f"File {file_path} not found. Generate the dataset first.")
@@ -520,7 +513,7 @@ class SyntheticGPTimeSeriesDataset(Dataset):
         self.seq_len = seq_len
 
         assert (
-            self.data.shape[1] >= self.seq_len 
+            self.data.shape[1] >= self.seq_len
         ), "Input data must have at least seq_len + target_len features"
         self.data = self.data[:, : self.seq_len]
 
@@ -551,9 +544,7 @@ def artificial_dataset(
     artificial_dataset = SyntheticTimeSeriesDataset(
         seq_len=seq_len, noise=noise, n_samples=10000
     )
-    gpdataset = SyntheticGPTimeSeriesDataset(
-        file_path=file_path, seq_len=seq_len
-    )
+    gpdataset = SyntheticGPTimeSeriesDataset(file_path=file_path, seq_len=seq_len)
     return torch.utils.data.ConcatDataset(
         [tsmixup_dataset, artificial_dataset, gpdataset]
     )

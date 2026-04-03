@@ -284,7 +284,7 @@ class GiftEvalPretrain(Dataset):
         self.dataset_name = dataset_names
 
         self.data_list = []
-        self.stride_list = []       # ✅ per-sample stride
+        self.stride_list = []  # ✅ per-sample stride
         self.n_window_list = []
 
         self.__read_data__()
@@ -362,9 +362,7 @@ class GiftEvalPretrain(Dataset):
         std = ctx.std() + 1e-6
         ctx = (ctx - mean) / std
 
-
-        return (
-            torch.from_numpy(ctx).float().squeeze(-1))
+        return torch.from_numpy(ctx).float().squeeze(-1)
 
     def __len__(self):
         return self.n_window_list[-1]

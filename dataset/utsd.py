@@ -28,15 +28,13 @@ class UTSDataset(Dataset):
         self.cache_dir = cache_dir
         self.max_samples = max_samples
         self.data_list = []
-        self.stride_list = []       # per-signal adaptive stride
-        self.n_window_list = []     # cumulative window counts
+        self.stride_list = []  # per-signal adaptive stride
+        self.n_window_list = []  # cumulative window counts
         self.subset_name = subset_name
         self.__read_data__()
 
     def __read_data__(self):
-        dataset = datasets.load_dataset(
-            "thuml/UTSD", self.subset_name, split="train"
-        )
+        dataset = datasets.load_dataset("thuml/UTSD", self.subset_name, split="train")
 
         print("Indexing dataset...")
         for item in tqdm(dataset):
@@ -49,7 +47,7 @@ class UTSDataset(Dataset):
             border2 = border2s[self.set_type]
             data = data[border1:border2]
 
-            max_windows = len(data) - self.seq_len   # denominator space
+            max_windows = len(data) - self.seq_len  # denominator space
             if max_windows < 1:
                 continue
 
@@ -59,12 +57,12 @@ class UTSDataset(Dataset):
             if self.max_samples > 1:
                 required_stride = max_windows / (self.max_samples - 1)
             else:
-                required_stride = max_windows           # only 1 window allowed
+                required_stride = max_windows  # only 1 window allowed
 
             stride = max(self.min_stride, int(np.ceil(required_stride)))
             # ----------------------------------------------------------------
 
-            n_window = max_windows // stride + 1       # guaranteed <= max_samples
+            n_window = max_windows // stride + 1  # guaranteed <= max_samples
 
             self.data_list.append(data)
             self.stride_list.append(stride)
@@ -100,9 +98,7 @@ class UTSDataset(Dataset):
         std = ctx.std() + 1e-6
         ctx = (ctx - mean) / std
 
-        return (
-            torch.from_numpy(ctx).float(),
-        )
+        return (torch.from_numpy(ctx).float(),)
 
     def __len__(self):
         return self.n_window_list[-1]
