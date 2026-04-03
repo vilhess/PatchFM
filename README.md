@@ -10,8 +10,7 @@ A concise, reproducible recipe for training a transformer-based, patch-to-patch 
 - SwiGLU feed-forward networks
 - Autoregressive multi-quantile decoding [MOIRAI2.0](https://arxiv.org/pdf/2511.11698)
 - KV-cache for efficient long-horizon inference
-- flip-es during inference (optional)
-
+- flips equivariance during inference (optional) [Reverso](https://arxiv.org/pdf/2602.17634v1)
 
 ## Quick Start
 
