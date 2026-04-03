@@ -4,14 +4,9 @@ from multiprocessing import cpu_count
 import numpy as np
 from joblib import Parallel, delayed, parallel_backend
 from sklearn.gaussian_process import GaussianProcessRegressor
-from sklearn.gaussian_process.kernels import (
-    RBF,
-    ConstantKernel,
-    DotProduct,
-    ExpSineSquared,
-    RationalQuadratic,
-    WhiteKernel,
-)
+from sklearn.gaussian_process.kernels import (RBF, ConstantKernel, DotProduct,
+                                              ExpSineSquared,
+                                              RationalQuadratic, WhiteKernel)
 from tqdm import tqdm
 
 
