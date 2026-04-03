@@ -5,8 +5,8 @@ from dataclasses import asdict, dataclass, field
 class PatchFMConfig:
     max_seq_len: int = 1024
     patch_len: int = 32
-    d_model: int = 2048
-    n_heads: int = 64
+    d_model: int = 1024
+    n_heads: int = 32
     n_layers_encoder: int = 6
     quantiles: list[float] = field(
         default_factory=lambda: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
@@ -14,7 +14,7 @@ class PatchFMConfig:
 
     # for inference
     load_from_hub: bool = True
-    ckpt_path: str = None
+    ckpt_path: str = "ckpts/patchfm.ckpt"
     compile: bool = True
 
     def __getitem__(self, key):

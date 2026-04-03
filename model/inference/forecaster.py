@@ -34,7 +34,7 @@ class Forecaster(nn.Module):
         # Load weights either from HF Hub or local checkpoint
         if config["load_from_hub"]:
             print("Loading base model from HuggingFace Hub...")
-            base_model = PatchFM.from_pretrained("vilhess/PatchFM-CausalRevIN-asinh")
+            base_model = PatchFM.from_pretrained("vilhess/PatchFM")
             self._init_from_base(base_model)
         else:
             print(f"Loading weights from local ckpt: {config['ckpt_path']}")

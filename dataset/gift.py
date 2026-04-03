@@ -235,12 +235,18 @@ class DatasetGiftEval:
 
 class GiftEvalPretrain(Dataset):
     def __init__(
-        self, path="path/to/giftdataset/", input_len=None, output_len=None, stride=32
+        self,
+        path="path/to/gift_pretrain_dataset/",
+        input_len=None,
+        min_stride=32,
+        max_samples=1000,
     ):
         self.input_len = input_len
-        self.output_len = output_len
-        self.seq_len = input_len + output_len
-        self.stride = stride
+        self.seq_len = input_len
+
+        self.min_stride = min_stride
+        self.max_samples = max_samples
+
         self.path = path
 
         gift_eval_path = Path(path)
@@ -262,7 +268,7 @@ class GiftEvalPretrain(Dataset):
                 check=True,
             )
 
-        # Get all subdirectories (dataset names) in the GIFT_EVAL path
+        # discover datasets
         dataset_names = []
         for dataset_dir in gift_eval_path.iterdir():
             if dataset_dir.name.startswith("."):
@@ -278,12 +284,15 @@ class GiftEvalPretrain(Dataset):
         self.dataset_name = dataset_names
 
         self.data_list = []
+        self.stride_list = []       # ✅ per-sample stride
         self.n_window_list = []
 
         self.__read_data__()
 
     def __read_data__(self):
         print("Indexing dataset...")
+        total_windows = 0
+
         for item in tqdm(self.dataset_name):
             try:
                 dataset = DatasetGiftEval(
@@ -291,6 +300,7 @@ class GiftEvalPretrain(Dataset):
                 )
                 train_data_iter = dataset.training_dataset
                 iter_dataset = iter(train_data_iter)
+
                 while True:
                     try:
                         subdataset = next(iter_dataset)
@@ -299,48 +309,62 @@ class GiftEvalPretrain(Dataset):
                         if torch.isnan(torch.from_numpy(data)).any():
                             continue
 
-                        n_window = (len(data) - self.seq_len) // self.stride + 1
+                        L = len(data)
+                        if L <= self.seq_len:
+                            continue
+
+                        # ✅ adaptive stride
+                        adaptive_stride = math.ceil(
+                            (L - self.seq_len) / max(1, (self.max_samples - 1))
+                        )
+                        stride = max(self.min_stride, adaptive_stride)
+
+                        n_window = (L - self.seq_len) // stride + 1
 
                         if n_window < 1:
                             continue
 
                         self.data_list.append(data)
-                        self.n_window_list.append(
-                            n_window
-                            if len(self.n_window_list) == 0
-                            else self.n_window_list[-1] + n_window
-                        )
-                    except:
+                        self.stride_list.append(stride)
+
+                        total_windows += n_window
+                        self.n_window_list.append(total_windows)
+
+                    except StopIteration:
                         break
-            except Exception as e:
+                    except Exception:
+                        break
+
+            except Exception:
                 continue
 
     def __getitem__(self, index):
-        # you can wirte your own processing code here
         dataset_index = 0
         while index >= self.n_window_list[dataset_index]:
             dataset_index += 1
 
-        index = (
-            index - self.n_window_list[dataset_index - 1]
-            if dataset_index > 0
-            else index
-        )
-        n_timepoint = (
-            len(self.data_list[dataset_index]) - self.seq_len
-        ) // self.stride + 1
+        if dataset_index > 0:
+            index -= self.n_window_list[dataset_index - 1]
 
-        s_begin = index % n_timepoint
-        s_begin = self.stride * s_begin
+        data = self.data_list[dataset_index]
+        stride = self.stride_list[dataset_index]
+
+        n_timepoint = (len(data) - self.seq_len) // stride + 1
+
+        s_begin = (index % n_timepoint) * stride
         s_end = s_begin + self.seq_len
-        seq_x = self.data_list[dataset_index][s_begin:s_end, :]
 
-        ctx = seq_x[: self.input_len, :]
-        target = seq_x[self.input_len : self.seq_len, :]
+        seq_x = data[s_begin:s_end, 0]
 
-        return torch.from_numpy(ctx).float().squeeze(-1), torch.from_numpy(
-            target
-        ).float().squeeze(-1)
+        ctx = seq_x[: self.input_len]
+
+        mean = ctx.mean()
+        std = ctx.std() + 1e-6
+        ctx = (ctx - mean) / std
+
+
+        return (
+            torch.from_numpy(ctx).float().squeeze(-1))
 
     def __len__(self):
         return self.n_window_list[-1]

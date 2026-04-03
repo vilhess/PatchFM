@@ -19,5 +19,6 @@ notebooks/attention_visualization.ipynb
 results/
 python_package/
 data/giftpretrain/
-
+datasetV2/
+data/training_corpus_kernel_synth_1m.npz
 script_eval/

@@ -172,6 +172,7 @@ This discrepancy arises because the *quantile collapse* step aggregates predicti
 - UTSD (Unified Time Series Dataset) [UTSD]: seven domains (Energy, IoT, Nature, Web, Health, Transport, Environment). We work with UTSD-12G (~18M series after preprocessing).
 - GIFT-Eval pretraining dataset [GIFT]: aligned with the GIFT-Eval dataset but without data leakage issue with the benchmark. The dataset contains approximately 71 univariate and 17 multivariate time series datasets from various
 domains and various frequencies. After preprocessing, this yields approximately 600K univariate series. 
+- Chronos synthetic datasets [Chronos]: two large synthetic datasets generated with Chronos, one with TSMixup and one with KernelSynth. Each contains approximately 10 million univariate series and 1 million respectively, each signal of length 1024.
 - Artificial: ~1M synthetic series (sinusoidal, linear, polynomial, logarithmic) plus mixtures via TSMixup [Chronos]; Gaussian Process samples via KernelSynth (mixtures of RBF/periodic/linear kernels with swept hyperparameters).
 
 ## Repository Layout
@@ -192,6 +193,7 @@ domains and various frequencies. After preprocessing, this yields approximately 
   - `utsd.py` — Unified Time Series Dataset (UTSD) loading and preprocessing
   - `gift.py` — GIFT-Eval pretraining dataset loading and preprocessing
   - `get_data.py` — utility to fetch and preprocess datasets
+  - `chronosdata.py` — loading of the synthetic datasets generated with Chronos (TSMixup and KernelSynth) with download functions integrated
   - `generate_data.py` — utility to generate and save the KernelSynth dataset (long to generate)
 
 - `configs/` — model and training configurations
