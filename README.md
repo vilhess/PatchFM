@@ -2,11 +2,13 @@
 
 A concise, reproducible recipe for training a transformer-based, patch-to-patch forecasting model for univariate time series. The approach mirrors Large Language Model (LLM) practices (next-token → next-patch) while remaining lightweight compared to a classic LLM and practical.
 
+The normalization strategy used is **Causal Revin+$\sinh^{-1}$**. This strategy is based on a previous work [Does Normalization Choice Matter for Causal Large Time-Series Models?](https://openreview.net/forum?id=lMNWBnFHxt)
+
 ## Highlights
 - Next-patch prediction objective (autoregressive, causal)
 - Patch-based representation of time series (tokens ↔ patches)
 - Causal masking self-attention with RoPE (relative positions)
-- RevIN (Reversible Instance Normalization)
+- Causal RevIN with $\sinh^{-1}$ transform for normalization 
 - SwiGLU feed-forward networks
 - Autoregressive multi-quantile decoding [MOIRAI2.0](https://arxiv.org/pdf/2511.11698)
 - KV-cache for efficient long-horizon inference

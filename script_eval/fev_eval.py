@@ -4,6 +4,7 @@ import datasets
 import fev
 import pandas as pd
 import torch
+from tqdm import tqdm
 
 from patchfm import Forecaster, PatchFMConfig
 
@@ -47,7 +48,7 @@ def predict_with_model(
         for batch in batchify(loaded_targets, batch_size=batch_size, max_context_length=max_context_length):
             
             pred, quantiles = model(
-                batch, quantiles=task.quantile_levels, forecast_horizon=task.horizon
+                batch, quantiles=task.quantile_levels, forecast_horizon=task.horizon, flip_equivariance=False
             )
             all_preds.append(pred.cpu())
             all_quantiles.append(quantiles.cpu())
@@ -70,7 +71,7 @@ def predict_with_model(
 
 
 if __name__ == "__main__":
-    model_name = "PatchFM_nocausal"
+    model_name = "MyModel"
     num_tasks = None  # replace with `num_tasks = None` to run on all tasks
 
     config = PatchFMConfig(compile=True)
@@ -80,7 +81,7 @@ if __name__ == "__main__":
         "https://raw.githubusercontent.com/autogluon/fev/refs/heads/main/benchmarks/fev_bench/tasks.yaml"
     )
     summaries = []
-    for task in benchmark.tasks[:num_tasks]:
+    for task in tqdm(benchmark.tasks[:num_tasks], desc="Evaluating tasks"):
         predictions, inference_time, extra_info = predict_with_model(model, task)
         evaluation_summary = task.evaluation_summary(
             predictions,
