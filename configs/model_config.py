@@ -5,7 +5,7 @@ from dataclasses import asdict, dataclass, field
 class PatchFMConfig:
     max_seq_len: int = 1024
     patch_len: int = 32
-    d_model: int = 1024
+    d_model: int = 2048
     n_heads: int = 32
     n_layers_encoder: int = 6
     quantiles: list[float] = field(

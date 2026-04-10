@@ -1,6 +1,7 @@
 import lightning as L
 import torch
 import torch.optim as optim
+from lightning.pytorch.utilities import grad_norm
 
 from model.training.loss import MultiQuantileLoss
 from model.training.modules import PatchFM
@@ -24,11 +25,16 @@ class PatchFMLit(L.LightningModule):
         self.save_hyperparameters(config)
 
     def training_step(self, batch, batch_idx):
-        x, y = batch
+        x = batch
 
-        prediction, x_patch = self.model(x)
-        y = y.unsqueeze(1)
-        y = torch.cat([x_patch, y], dim=1)
+        # Data augmentation: random sign flip and time flip
+        sign_flip = torch.where(torch.randn(x.size(0), 1, device=x.device) > 0, 1.0, -1.0)
+        x = sign_flip*x
+        time_flip = torch.randn((x.size(0)), device=x.device) > 0.
+        x[time_flip] = x[time_flip].flip(dims=[1])
+
+        prediction, y = self.model(x)
+        prediction = prediction[:, :-1]
         loss = self.criterion(prediction, y)
         self.log("train_loss", loss, sync_dist=True)
         return loss
@@ -67,6 +73,10 @@ class PatchFMLit(L.LightningModule):
                 "frequency": 1,
             },
         }
+
+    def on_before_optimizer_step(self, optimizer):
+        norms = grad_norm(self.model, norm_type=2)
+        self.log_dict(norms)
 
     def on_train_epoch_end(self):
         torch.save(self.model.state_dict(), self.hparams.ckpt_path)

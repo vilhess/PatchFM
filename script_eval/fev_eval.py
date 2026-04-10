@@ -48,7 +48,7 @@ def predict_with_model(
         for batch in batchify(loaded_targets, batch_size=batch_size, max_context_length=max_context_length):
             
             pred, quantiles = model(
-                batch, quantiles=task.quantile_levels, forecast_horizon=task.horizon, flip_equivariance=False
+                batch, quantiles=task.quantile_levels, forecast_horizon=task.horizon, flip_equivariance=True
             )
             all_preds.append(pred.cpu())
             all_quantiles.append(quantiles.cpu())
@@ -71,7 +71,7 @@ def predict_with_model(
 
 
 if __name__ == "__main__":
-    model_name = "MyModel"
+    model_name = "MyModelV3"
     num_tasks = None  # replace with `num_tasks = None` to run on all tasks
 
     config = PatchFMConfig(compile=True)
