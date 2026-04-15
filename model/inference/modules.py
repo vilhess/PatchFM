@@ -201,7 +201,7 @@ class ResidualBlock(nn.Module):
 
 
 class MultiHeadAttention(nn.Module):
-    def __init__(self, d_model, n_heads, last=False):
+    def __init__(self, d_model, n_heads, last=False, use_xsa=False):
         super().__init__()
         assert (
             d_model % n_heads == 0
@@ -222,6 +222,7 @@ class MultiHeadAttention(nn.Module):
         self.v_cache = None
 
         self.last = last
+        self.use_xsa = use_xsa
 
     def forward(self, q):
         bs, context, dim = q.size()
@@ -259,6 +260,13 @@ class MultiHeadAttention(nn.Module):
             q, k, v, is_causal=is_causal
         )
 
+        if self.use_xsa:
+            if v.size(2) != values.size(2):
+                v = v[:, :, -values.size(2) :, :]
+                
+            vn = torch.nn.functional.normalize(v, dim=-1)
+            values = values - (values * vn).sum(dim=-1, keepdim=True) * vn
+
         values = values.transpose(1, 2).reshape(bs, -1, dim)
         values = self.out_proj(values)
         return values
@@ -288,10 +296,10 @@ class FeedForward(nn.Module):
 
 
 class TransformerEncoderLayer(nn.Module):
-    def __init__(self, d_model, n_heads, last=False):
+    def __init__(self, d_model, n_heads, last=False, use_xsa=False):
         super().__init__()
         self.ln1 = nn.LayerNorm(d_model)
-        self.attn = MultiHeadAttention(d_model=d_model, n_heads=n_heads, last=last)
+        self.attn = MultiHeadAttention(d_model=d_model, n_heads=n_heads, last=last, use_xsa=use_xsa)
         self.ln2 = nn.LayerNorm(d_model)
         self.ff = FeedForward(d_model=d_model)
 
@@ -303,16 +311,16 @@ class TransformerEncoderLayer(nn.Module):
 
 
 class TransformerEncoder(nn.Module):
-    def __init__(self, d_model, n_heads, n_layers):
+    def __init__(self, d_model, n_heads, n_layers, use_xsa=False):
         super().__init__()
         self.layers = nn.ModuleList(
             [
-                TransformerEncoderLayer(d_model=d_model, n_heads=n_heads)
+                TransformerEncoderLayer(d_model=d_model, n_heads=n_heads, use_xsa=use_xsa)
                 for _ in range(n_layers - 1)
             ]
         )
         self.layers.append(
-            TransformerEncoderLayer(d_model=d_model, n_heads=n_heads, last=True)
+            TransformerEncoderLayer(d_model=d_model, n_heads=n_heads, last=True, use_xsa=use_xsa)
         )
         self.norm = nn.LayerNorm(d_model)
 
@@ -331,6 +339,7 @@ class PatchFM(nn.Module, PyTorchModelHubMixin):
         self.d_model = config["d_model"]
         self.n_heads = config["n_heads"]
         self.n_layers_encoder = config["n_layers_encoder"]
+        self.use_xsa = config["use_xsa"]
         self.quantiles = config["quantiles"]
         self.n_quantiles = len(self.quantiles)
 
@@ -340,7 +349,7 @@ class PatchFM(nn.Module, PyTorchModelHubMixin):
             in_dim=self.patch_len, hid_dim=2 * self.patch_len, out_dim=self.d_model
         )
         self.transformer_encoder = TransformerEncoder(
-            d_model=self.d_model, n_heads=self.n_heads, n_layers=self.n_layers_encoder
+            d_model=self.d_model, n_heads=self.n_heads, n_layers=self.n_layers_encoder, use_xsa=self.use_xsa
         )
         self.proj_output = ResidualBlock(
             in_dim=self.d_model,

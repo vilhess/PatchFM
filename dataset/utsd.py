@@ -98,7 +98,7 @@ class UTSDataset(Dataset):
         std = ctx.std() + 1e-6
         ctx = (ctx - mean) / std
 
-        return (torch.from_numpy(ctx).float(),)
+        return torch.from_numpy(ctx).float()
 
     def __len__(self):
         return self.n_window_list[-1]

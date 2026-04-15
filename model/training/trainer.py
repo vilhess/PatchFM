@@ -18,6 +18,7 @@ class PatchFMLit(L.LightningModule):
             n_layers_encoder=model_config.n_layers_encoder,
             dropout=train_config.dropout,
             quantiles=model_config.quantiles,
+            use_xsa=model_config.use_xsa,
         )
         self.criterion = MultiQuantileLoss(self.model.quantiles)
 

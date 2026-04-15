@@ -20,6 +20,7 @@ class Forecaster(nn.Module):
         self.n_layers_encoder = config["n_layers_encoder"]
         self.quantiles = config["quantiles"]
         self.n_quantiles = len(self.quantiles)
+        self.use_xsa = config["use_xsa"]
         self.max_patches = self.max_seq_len // self.patch_len
 
         assert (
@@ -28,10 +29,19 @@ class Forecaster(nn.Module):
 
         # Load weights either from HF Hub or local checkpoint
         if config["load_from_hub"]:
-            print("Loading base model from HuggingFace Hub...")
-            base_model = PatchFM.from_pretrained("vilhess/PatchFM")
+            if self.use_xsa:
+                print("Loading XSA model from HuggingFace Hub...")
+                base_model = PatchFM.from_pretrained("vilhess/PatchFM-XSA")
+            else:
+                print("Loading base model from HuggingFace Hub...")
+                base_model = PatchFM.from_pretrained("vilhess/PatchFM")
+
             self._init_from_base(base_model)
+
         else:
+            if self.use_xsa:
+                assert "xsa" in config["ckpt_path"], "Expected XSA model checkpoint path to contain 'xsa'."
+
             print(f"Loading weights from local ckpt: {config['ckpt_path']}")
             self._init_components()
             state = torch.load(config["ckpt_path"], weights_only=True)
@@ -53,7 +63,7 @@ class Forecaster(nn.Module):
             in_dim=self.patch_len, hid_dim=2 * self.patch_len, out_dim=self.d_model
         )
         self.transformer_encoder = TransformerEncoder(
-            d_model=self.d_model, n_heads=self.n_heads, n_layers=self.n_layers_encoder
+            d_model=self.d_model, n_heads=self.n_heads, n_layers=self.n_layers_encoder, use_xsa=self.use_xsa
         )
         self.proj_output = ResidualBlock(
             in_dim=self.d_model,
@@ -80,19 +90,8 @@ class Forecaster(nn.Module):
 
         # Default horizon = patch_len
         forecast_horizon = forecast_horizon or self.patch_len
-
-        x = self.converter.convert(x)
-        assert x.ndim in (
-            1,
-            2,
-        ), f"Input dimension must be 1D (time) or 2D (batch, time), got {x.ndim}D."
-
-        batch_dim = True
-        if x.ndim != 2:
-            x = x.unsqueeze(0)
-            batch_dim = False
+        
         bs, ws = x.size()
-
         x = x.to(self.device)
 
         if ws > self.max_seq_len:
@@ -182,13 +181,6 @@ class Forecaster(nn.Module):
             pred_median = torch.zeros_like(pred_median)
             pred_quantiles = torch.zeros_like(pred_quantiles)
 
-        if not batch_dim:
-            pred_median = pred_median.squeeze(0)
-            pred_quantiles = pred_quantiles.squeeze(0)
-
-        pred_median, pred_quantiles = self.converter.deconvert(
-            pred_median, pred_quantiles
-        )
         return pred_median, pred_quantiles
 
     def __call__(
@@ -198,16 +190,30 @@ class Forecaster(nn.Module):
         quantiles: list[float] | None = None,
         flip_equivariance: bool = False,
     ) -> torch.Tensor:
+
+        x = self.converter.convert(context)
+        assert x.ndim in (
+            1,
+            2,
+        ), f"Input dimension must be 1D (time) or 2D (batch, time), got {x.ndim}D."
+
+        batch_dim = True
+        if x.ndim != 2:
+            x = x.unsqueeze(0)
+            batch_dim = False
+
+        bs, ws = x.size()
+
         if flip_equivariance:
             print(
                 "Flip equivariance enabled: forecast = (f(x) - f(-x)) / 2. This requires multiplying by 2 the batch size (Reverso: Efficient Time Series Foundation Models for Zero-shot Forecasting)."
             )
-            bs = context.size(0)
-            context_flipped = -context
-            concat_context = torch.cat([context, context_flipped], dim=0)
+
+            x_flipped = -x
+            concat_x = torch.cat([x, x_flipped], dim=0)
             pred_median_full, pred_quantiles_full = (
                 self.auto_regressive_quantile_decoding(
-                    concat_context, forecast_horizon, quantiles
+                    concat_x, forecast_horizon, quantiles
                 )
             )
             pred_median, pred_quantiles = (
@@ -222,8 +228,17 @@ class Forecaster(nn.Module):
             pred_quantiles = (pred_quantiles - flip_last_dim(pred_quantiles2)) / 2
         else:
             pred_median, pred_quantiles = self.auto_regressive_quantile_decoding(
-                context, forecast_horizon, quantiles
+                x, forecast_horizon, quantiles
             )
+
+        if not batch_dim:
+            pred_median = pred_median.squeeze(0)
+            pred_quantiles = pred_quantiles.squeeze(0)
+
+        pred_median, pred_quantiles = self.converter.deconvert(
+            pred_median, pred_quantiles
+        )
+
         return pred_median, pred_quantiles
 
     def clear_cache(self):

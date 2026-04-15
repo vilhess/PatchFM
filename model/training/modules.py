@@ -24,7 +24,7 @@ class ResidualBlock(nn.Module):
 
 
 class MultiHeadAttention(nn.Module):
-    def __init__(self, d_model, n_heads, dropout=0.1):
+    def __init__(self, d_model, n_heads, dropout=0.1, use_xsa=False):
         super().__init__()
         assert (
             d_model % n_heads == 0
@@ -40,6 +40,7 @@ class MultiHeadAttention(nn.Module):
 
         self.head_dim = d_model // n_heads
         self.n_heads = n_heads
+        self.use_xsa = use_xsa
 
         self.rope = RotaryEmbedding(dim=self.head_dim // 2)
 
@@ -59,6 +60,10 @@ class MultiHeadAttention(nn.Module):
         values = nn.functional.scaled_dot_product_attention(
             q, k, v, is_causal=True, dropout_p=self.dropout if self.training else 0.0
         )
+
+        if self.use_xsa:
+            vn = torch.nn.functional.normalize(v, dim=-1)
+            values = values - (values * vn).sum(dim=-1, keepdim=True) * vn
 
         values = values.transpose(1, 2).reshape(bs, -1, dim)
         values = self.out_proj(values)
@@ -86,11 +91,11 @@ class FeedForward(nn.Module):
 
 
 class TransformerEncoderLayer(nn.Module):
-    def __init__(self, d_model, n_heads, dropout):
+    def __init__(self, d_model, n_heads, dropout, use_xsa=False):
         super().__init__()
         self.ln1 = nn.LayerNorm(d_model)
         self.attn = MultiHeadAttention(
-            d_model=d_model, n_heads=n_heads, dropout=dropout
+            d_model=d_model, n_heads=n_heads, dropout=dropout, use_xsa=use_xsa
         )
         self.ln2 = nn.LayerNorm(d_model)
         self.ff = FeedForward(d_model=d_model, dropout=dropout)
@@ -103,12 +108,12 @@ class TransformerEncoderLayer(nn.Module):
 
 
 class TransformerEncoder(nn.Module):
-    def __init__(self, d_model, n_heads, n_layers, dropout=0.1):
+    def __init__(self, d_model, n_heads, n_layers, dropout=0.1, use_xsa=False):
         super().__init__()
         self.layers = nn.ModuleList(
             [
                 TransformerEncoderLayer(
-                    d_model=d_model, n_heads=n_heads, dropout=dropout
+                    d_model=d_model, n_heads=n_heads, dropout=dropout, use_xsa=use_xsa
                 )
                 for _ in range(n_layers)
             ]
@@ -123,7 +128,7 @@ class TransformerEncoder(nn.Module):
 
 class PatchFM(nn.Module):
     def __init__(
-        self, patch_len, d_model, n_heads, n_layers_encoder, dropout=0.1, quantiles=None
+        self, patch_len, d_model, n_heads, n_layers_encoder, dropout=0.1, use_xsa=False, quantiles=None
     ):
         super().__init__()
 
@@ -143,7 +148,7 @@ class PatchFM(nn.Module):
         )
         self.dp = nn.Dropout(dropout)
         self.transformer_encoder = TransformerEncoder(
-            d_model=d_model, n_heads=n_heads, n_layers=n_layers_encoder, dropout=dropout
+            d_model=d_model, n_heads=n_heads, n_layers=n_layers_encoder, dropout=dropout, use_xsa=use_xsa
         )
 
         self.proj_output = ResidualBlock(
