@@ -6,11 +6,7 @@ import pandas as pd
 import torch
 from tqdm import tqdm
 
-#from patchfm import Forecaster, PatchFMConfig
-import sys
-sys.path.append("..")
-from model import Forecaster
-from configs import PatchFMConfig
+from patchfm import Forecaster, PatchFMConfig
 
 datasets.disable_progress_bars()
 
@@ -77,11 +73,9 @@ def predict_with_model(
 if __name__ == "__main__":
     use_xsa = True  # Set to False to run without XSA
     model_name = "PatchFM-xsa" if use_xsa else "PatchFM"
-    num_tasks = None  # replace with `num_tasks = None` to run on all tasks
+    num_tasks = None 
 
-    #config = PatchFMConfig(compile=True)
-    #model = Forecaster(config)
-    config = PatchFMConfig(compile=True, load_from_hub=True, use_xsa=use_xsa)
+    config = PatchFMConfig(compile=True, use_xsa=use_xsa)
     model = Forecaster(config)
 
     benchmark = fev.Benchmark.from_yaml(

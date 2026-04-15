@@ -13,6 +13,7 @@ The normalization strategy used is **Causal Revin+$\sinh^{-1}$**. This strategy 
 - Autoregressive multi-quantile decoding [MOIRAI2.0](https://arxiv.org/pdf/2511.11698)
 - KV-cache for efficient long-horizon inference
 - flips equivariance during inference (optional) [Reverso](https://arxiv.org/pdf/2602.17634v1)
+- A variant with [Exclusive Self-Attention](https://arxiv.org/pdf/2603.09078) has been added.
 
 ## Quick Start
 
@@ -33,7 +34,7 @@ from configs import PatchFMConfig
 from model import Forecaster
 
 # --- Instantiate model ---
-config = PatchFMConfig(load_from_hub=True)
+config = PatchFMConfig(load_from_hub=True, use_xsa=True)  # set `use_xsa=False` to run without Exclusive Self-Attention (XSA)
 model = Forecaster(config)
 
 # --- Inference ---
@@ -75,6 +76,7 @@ If you dont have suitable hardware you can run the the extended quick start exam
 - Inference: Predict next patch; roll out autoregressively for long horizons.
 - KV-cache: during inference, cache keys/values to avoid redundant computations.
 - Flip-equivariance: during inference, flip input sequence and average predictions to improve robustness (at cost of doubling batch size).
+- Exclusive Self-Attention (XSA): a variant of self-attention.
 
 ## Problem Formulation
 Given context patches $x_{p_1}, \ldots, x_{p_n}$, predict the next patch $x_{p_{i+1}}$ for each position $i$ using only past patches (causality). The model outputs quantiles $\{\hat{x}_{p_{i+1}}^{(q)}: q \in \mathcal{Q}\}$ with median (q=0.5) as the point forecast.
