@@ -1,3 +1,4 @@
+from PIL.ImageOps import flip
 import time
 
 import datasets
@@ -71,29 +72,35 @@ def predict_with_model(
 
 
 if __name__ == "__main__":
-    use_xsa = True  # Set to False to run without XSA
-    model_name = "PatchFM-xsa" if use_xsa else "PatchFM"
-    num_tasks = None 
+    for use_xsa in [True, False]:
+        use_xsa = use_xsa  # Set to False to run without XSA
+        flip_equivariance = False  # Set to False to disable flip equivariance
 
-    config = PatchFMConfig(compile=True, use_xsa=use_xsa)
-    model = Forecaster(config)
+        if flip_equivariance:
+            model_name = "PatchFM-xsa" if use_xsa else "PatchFM"
+        else:
+            model_name = "PatchFM-xsa-no-flip" if use_xsa else "PatchFM-no-flip"
+        num_tasks = None 
 
-    benchmark = fev.Benchmark.from_yaml(
-        "https://raw.githubusercontent.com/autogluon/fev/refs/heads/main/benchmarks/fev_bench/tasks.yaml"
-    )
-    summaries = []
-    for task in tqdm(benchmark.tasks[:num_tasks], desc="Evaluating tasks"):
-        predictions, inference_time, extra_info = predict_with_model(model, task)
-        evaluation_summary = task.evaluation_summary(
-            predictions,
-            model_name=model_name,
-            inference_time_s=inference_time,
-            extra_info=extra_info,
+        config = PatchFMConfig(compile=True, use_xsa=use_xsa)
+        model = Forecaster(config)
+
+        benchmark = fev.Benchmark.from_yaml(
+            "https://raw.githubusercontent.com/autogluon/fev/refs/heads/main/benchmarks/fev_bench/tasks.yaml"
         )
-        #print(evaluation_summary)
-        summaries.append(evaluation_summary)
+        summaries = []
+        for task in tqdm(benchmark.tasks[:num_tasks], desc="Evaluating tasks"):
+            predictions, inference_time, extra_info = predict_with_model(model, task)
+            evaluation_summary = task.evaluation_summary(
+                predictions,
+                model_name=model_name,
+                inference_time_s=inference_time,
+                extra_info=extra_info,
+            )
+            #print(evaluation_summary)
+            summaries.append(evaluation_summary)
 
-    # Show and save the results
-    summary_df = pd.DataFrame(summaries)
-    print(summary_df)
-    summary_df.to_csv(f"results/{model_name}.csv", index=False)
+        # Show and save the results
+        summary_df = pd.DataFrame(summaries)
+        print(summary_df)
+        summary_df.to_csv(f"results/{model_name}.csv", index=False)
