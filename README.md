@@ -8,7 +8,7 @@ The normalization strategy used is **Causal Revin+$\sinh^{-1}$**. This strategy 
 - Next-patch prediction objective (autoregressive, causal)
 - Patch-based representation of time series (tokens ↔ patches)
 - Causal masking self-attention with RoPE (relative positions)
-- Causal RevIN with $\sinh^{-1}$ transform for normalization 
+- Causal RevIN with $\sinh^{-1}$ transform for normalization (introduced in [Does Normalization Choice Matter for Causal Large Time-Series Models?](https://openreview.net/forum?id=lMNWBnFHxt))
 - SwiGLU feed-forward networks
 - Autoregressive multi-quantile decoding [MOIRAI2.0](https://arxiv.org/pdf/2511.11698)
 - KV-cache for efficient long-horizon inference
