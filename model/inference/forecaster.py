@@ -20,7 +20,6 @@ class Forecaster(nn.Module):
         self.n_layers_encoder = config["n_layers_encoder"]
         self.quantiles = config["quantiles"]
         self.n_quantiles = len(self.quantiles)
-        self.use_xsa = config["use_xsa"]
         self.max_patches = self.max_seq_len // self.patch_len
 
         assert (
@@ -29,18 +28,12 @@ class Forecaster(nn.Module):
 
         # Load weights either from HF Hub or local checkpoint
         if config["load_from_hub"]:
-            if self.use_xsa:
-                print("Loading XSA model from HuggingFace Hub...")
-                base_model = PatchFM.from_pretrained("vilhess/PatchFM-XSA")
-            else:
-                print("Loading base model from HuggingFace Hub...")
-                base_model = PatchFM.from_pretrained("vilhess/PatchFM")
+            print("Loading base model from HuggingFace Hub...")
+            base_model = PatchFM.from_pretrained("vilhess/PatchFM")
 
             self._init_from_base(base_model)
 
         else:
-            if self.use_xsa:
-                assert "xsa" in config["ckpt_path"], "Expected XSA model checkpoint path to contain 'xsa'."
 
             print(f"Loading weights from local ckpt: {config['ckpt_path']}")
             self._init_components()
@@ -63,7 +56,7 @@ class Forecaster(nn.Module):
             in_dim=self.patch_len, hid_dim=2 * self.patch_len, out_dim=self.d_model
         )
         self.transformer_encoder = TransformerEncoder(
-            d_model=self.d_model, n_heads=self.n_heads, n_layers=self.n_layers_encoder, use_xsa=self.use_xsa
+            d_model=self.d_model, n_heads=self.n_heads, n_layers=self.n_layers_encoder
         )
         self.proj_output = ResidualBlock(
             in_dim=self.d_model,
@@ -205,9 +198,6 @@ class Forecaster(nn.Module):
         bs, ws = x.size()
 
         if flip_equivariance:
-            print(
-                "Flip equivariance enabled: forecast = (f(x) - f(-x)) / 2. This requires multiplying by 2 the batch size (Reverso: Efficient Time Series Foundation Models for Zero-shot Forecasting)."
-            )
 
             x_flipped = -x
             concat_x = torch.cat([x, x_flipped], dim=0)

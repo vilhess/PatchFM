@@ -1,6 +1,5 @@
 from dataclasses import asdict, dataclass, field
 
-
 @dataclass
 class PatchFMConfig:
     max_seq_len: int = 1024
@@ -8,7 +7,6 @@ class PatchFMConfig:
     d_model: int = 2048
     n_heads: int = 32
     n_layers_encoder: int = 6
-    use_xsa: bool = False
     quantiles: list[float] = field(
         default_factory=lambda: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
     )

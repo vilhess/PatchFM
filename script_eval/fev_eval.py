@@ -7,7 +7,13 @@ import pandas as pd
 import torch
 from tqdm import tqdm
 
-from patchfm import Forecaster, PatchFMConfig
+#from patchfm import Forecaster, PatchFMConfig # from pypi package
+
+import sys
+sys.path.append("..")  
+
+from model import Forecaster
+from configs import PatchFMConfig
 
 datasets.disable_progress_bars()
 
@@ -72,35 +78,27 @@ def predict_with_model(
 
 
 if __name__ == "__main__":
-    for use_xsa in [True, False]:
-        use_xsa = use_xsa  # Set to False to run without XSA
-        flip_equivariance = False  # Set to False to disable flip equivariance
 
-        if flip_equivariance:
-            model_name = "PatchFM-xsa" if use_xsa else "PatchFM"
-        else:
-            model_name = "PatchFM-xsa-no-flip" if use_xsa else "PatchFM-no-flip"
-        num_tasks = None 
+    model_name="PatchFM_HUGE2"
 
-        config = PatchFMConfig(compile=True, use_xsa=use_xsa)
-        model = Forecaster(config)
-
-        benchmark = fev.Benchmark.from_yaml(
-            "https://raw.githubusercontent.com/autogluon/fev/refs/heads/main/benchmarks/fev_bench/tasks.yaml"
+    num_tasks = None 
+    config = PatchFMConfig(compile=True, load_from_hub=False, ckpt_path="../ckpts/patchfm_huge2.ckpt")
+    model = Forecaster(config)
+    benchmark = fev.Benchmark.from_yaml(
+        "https://raw.githubusercontent.com/autogluon/fev/refs/heads/main/benchmarks/fev_bench/tasks.yaml"
+    )
+    summaries = []
+    for task in tqdm(benchmark.tasks[:num_tasks], desc="Evaluating tasks"):
+        predictions, inference_time, extra_info = predict_with_model(model, task)
+        evaluation_summary = task.evaluation_summary(
+            predictions,
+            model_name=model_name,
+            inference_time_s=inference_time,
+            extra_info=extra_info,
         )
-        summaries = []
-        for task in tqdm(benchmark.tasks[:num_tasks], desc="Evaluating tasks"):
-            predictions, inference_time, extra_info = predict_with_model(model, task)
-            evaluation_summary = task.evaluation_summary(
-                predictions,
-                model_name=model_name,
-                inference_time_s=inference_time,
-                extra_info=extra_info,
-            )
-            #print(evaluation_summary)
-            summaries.append(evaluation_summary)
-
-        # Show and save the results
-        summary_df = pd.DataFrame(summaries)
-        print(summary_df)
-        summary_df.to_csv(f"results/{model_name}.csv", index=False)
+        #print(evaluation_summary)
+        summaries.append(evaluation_summary)
+    # Show and save the results
+    summary_df = pd.DataFrame(summaries)
+    print(summary_df)
+    summary_df.to_csv(f"results/{model_name}.csv", index=False)
