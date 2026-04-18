@@ -128,7 +128,14 @@ class TransformerEncoder(nn.Module):
 
 class PatchFM(nn.Module):
     def __init__(
-        self, patch_len, d_model, n_heads, n_layers_encoder, dropout=0.1, use_xsa=False, quantiles=None
+        self,
+        patch_len,
+        d_model,
+        n_heads,
+        n_layers_encoder,
+        dropout=0.1,
+        use_xsa=False,
+        quantiles=None,
     ):
         super().__init__()
 
@@ -148,7 +155,11 @@ class PatchFM(nn.Module):
         )
         self.dp = nn.Dropout(dropout)
         self.transformer_encoder = TransformerEncoder(
-            d_model=d_model, n_heads=n_heads, n_layers=n_layers_encoder, dropout=dropout, use_xsa=use_xsa
+            d_model=d_model,
+            n_heads=n_heads,
+            n_layers=n_layers_encoder,
+            dropout=dropout,
+            use_xsa=use_xsa,
         )
 
         self.proj_output = ResidualBlock(

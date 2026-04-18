@@ -2,8 +2,13 @@ import torch
 import torch.nn as nn
 from einops import rearrange
 
-from model.inference.modules import (CausalRevIN, PatchFM, ResidualBlock,
-                                     SeqTypeConverter, TransformerEncoder)
+from model.inference.modules import (
+    CausalRevIN,
+    PatchFM,
+    ResidualBlock,
+    SeqTypeConverter,
+    TransformerEncoder,
+)
 from model.inference.utils import flip_last_dim
 
 
@@ -83,7 +88,7 @@ class Forecaster(nn.Module):
 
         # Default horizon = patch_len
         forecast_horizon = forecast_horizon or self.patch_len
-        
+
         bs, ws = x.size()
         x = x.to(self.device)
 

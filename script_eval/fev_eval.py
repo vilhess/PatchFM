@@ -1,19 +1,19 @@
-from PIL.ImageOps import flip
+import sys
 import time
 
 import datasets
 import fev
 import pandas as pd
 import torch
+from PIL.ImageOps import flip
 from tqdm import tqdm
 
 #from patchfm import Forecaster, PatchFMConfig # from pypi package
 
-import sys
 sys.path.append("..")  
 
-from model import Forecaster
 from configs import PatchFMConfig
+from model import Forecaster
 
 datasets.disable_progress_bars()
 

@@ -1,6 +1,8 @@
-import torch 
 import random
+
 import numpy as np
+import torch
+
 
 class InnerMixUP(torch.utils.data.Dataset):
     def __init__(self, dataset, K=4, alpha=1.5, n_samples=200_000):
@@ -22,6 +24,7 @@ class InnerMixUP(torch.utils.data.Dataset):
         new_signal = sum(lambdas[i] * signals[i] for i in range(k))
         new_signal = (new_signal - new_signal.mean()) / (new_signal.std() + 1e-8)
         return new_signal.float()
+
 
 class InterMixup(torch.utils.data.Dataset):
     def __init__(self, datasets, K=4, alpha=1.5, n_samples=200_000):

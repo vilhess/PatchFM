@@ -29,9 +29,11 @@ class PatchFMLit(L.LightningModule):
         x = batch
 
         # Data augmentation: random sign flip and time flip
-        sign_flip = torch.where(torch.randn(x.size(0), 1, device=x.device) > 0, 1.0, -1.0)
-        x = sign_flip*x
-        time_flip = torch.randn((x.size(0)), device=x.device) > 0.
+        sign_flip = torch.where(
+            torch.randn(x.size(0), 1, device=x.device) > 0, 1.0, -1.0
+        )
+        x = sign_flip * x
+        time_flip = torch.randn((x.size(0)), device=x.device) > 0.0
         x[time_flip] = x[time_flip].flip(dims=[1])
 
         prediction, y = self.model(x)

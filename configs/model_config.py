@@ -1,5 +1,6 @@
 from dataclasses import asdict, dataclass, field
 
+
 @dataclass
 class PatchFMConfig:
     max_seq_len: int = 1024

@@ -546,10 +546,7 @@ def artificial_dataset(
         [tsmixup_dataset, artificial_dataset, gpdataset]
     )
 
- 
 
-
- 
 #### Helpers for GP dataset generation ####
 
 
@@ -561,18 +558,21 @@ def generate_gp_dataset(size=1056):
     import numpy as np
     from joblib import Parallel, delayed, parallel_backend
     from sklearn.gaussian_process import GaussianProcessRegressor
-    from sklearn.gaussian_process.kernels import (RBF, ConstantKernel, DotProduct,
-                                                ExpSineSquared,
-                                                RationalQuadratic, WhiteKernel)
+    from sklearn.gaussian_process.kernels import (
+        RBF,
+        ConstantKernel,
+        DotProduct,
+        ExpSineSquared,
+        RationalQuadratic,
+        WhiteKernel,
+    )
     from tqdm import tqdm
-
 
     def get_xs(seq_len, target_len, start=None):
         if start is None:
             start = random.uniform(0, 1000)
         xx = np.linspace(start, start + seq_len + target_len - 1, seq_len + target_len)
         return xx
-
 
     def sample_kernel_from_bank():
         kernel_choices = []
@@ -613,10 +613,8 @@ def generate_gp_dataset(size=1056):
 
         return random.choice(kernel_choices)
 
-
     def compose_kernels(k1, k2, op):
         return k1 + k2 if op == "+" else k1 * k2
-
 
     def generate_synthetic_timeseries(size):
         lsyn = size
