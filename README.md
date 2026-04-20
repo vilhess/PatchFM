@@ -6,7 +6,7 @@ The normalization strategy used is **Causal Revin+$\sinh^{-1}$**. This strategy 
 
 ## Resuls on the FEV benchmark:
 
-**Our model is competitive with the state-of-the-art notably slightly better than MOIRAI 2.0.**
+**Our model is competitive with the state-of-the-art notably slightly better than [MOIRAI2.0](https://arxiv.org/pdf/2511.11698)**
 
 | Model Name           | Win Rate | Skill Score |
 |----------------------|----------|-------------|
