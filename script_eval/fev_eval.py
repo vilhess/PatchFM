@@ -55,7 +55,7 @@ def predict_with_model(
         for batch in batchify(loaded_targets, batch_size=batch_size, max_context_length=max_context_length):
             
             pred, quantiles = model(
-                batch, quantiles=task.quantile_levels, forecast_horizon=task.horizon, flip_equivariance=True
+                batch, quantiles=task.quantile_levels, forecast_horizon=task.horizon, flip_equivariance=False
             )
             all_preds.append(pred.cpu())
             all_quantiles.append(quantiles.cpu())
@@ -79,10 +79,10 @@ def predict_with_model(
 
 if __name__ == "__main__":
 
-    model_name="PatchFM_HUGE2"
+    model_name="PatchFM-noflip"
 
     num_tasks = None 
-    config = PatchFMConfig(compile=True, load_from_hub=False, ckpt_path="../ckpts/patchfm_huge2.ckpt")
+    config = PatchFMConfig(compile=True, load_from_hub=False, ckpt_path="../ckpts/patchfm.ckpt")
     model = Forecaster(config)
     benchmark = fev.Benchmark.from_yaml(
         "https://raw.githubusercontent.com/autogluon/fev/refs/heads/main/benchmarks/fev_bench/tasks.yaml"

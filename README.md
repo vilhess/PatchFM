@@ -4,6 +4,28 @@ A concise, reproducible recipe for training a transformer-based, patch-to-patch 
 
 The normalization strategy used is **Causal Revin+$\sinh^{-1}$**. This strategy is based on a previous work [Does Normalization Choice Matter for Causal Large Time-Series Models?](https://openreview.net/forum?id=lMNWBnFHxt)
 
+## Resuls on the FEV benchmark:
+
+**Our model is competitive with the state-of-the-art notably slightly better than MOIRAI 2.0.**
+
+| Model Name           | Win Rate | Skill Score |
+|----------------------|----------|-------------|
+| (🥇) Chronos-2           | 0.9008   | 0.4728      |
+| (🥈) TiRex               | 0.8092   | 0.4268      |
+| (🥉) TimesFM-2.5         | 0.8085   | 0.4668      |
+| (4) Toto-1.0            | 0.7069   | 0.4110      |
+| (5) **PatchFM (us)**             | 0.6677   | 0.3983      |
+| (6) Moirai-2.0          | 0.6546   | 0.4026      |
+| (7) Chronos-Bolt        | 0.6277   | 0.3889      |
+| (8) Sundial-Base        | 0.4446   | 0.3387      |
+| (9) CatBoost (Recursive)| 0.3362   | 0.2301      |
+| (10) LightGBM (Recursive)| 0.3123   | 0.2168      |
+| (11) AutoTheta           | 0.2938   | 0.0546      |
+| (12) Seasonal Naive      | 0.2058   | 0.0000      |
+| (13) Naive               | 0.1404   | -0.4540     |
+| (14) Drift               | 0.0915   | -0.4578     |
+
+
 ## Highlights
 - Next-patch prediction objective (autoregressive, causal)
 - Patch-based representation of time series (tokens ↔ patches)
@@ -96,7 +118,7 @@ Aggregate over positions, patch elements, and quantiles.
 - Forecast horizon: 32 steps per forward pass
 - Quantiles $\mathcal{Q}$: {0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9}
 - Layers: 6
-- Attention heads: 64 (head dim 32)
+- Attention heads: 32 (head dim 64)
 - Model dim: 2048
 - Parameters: ~300M
 
