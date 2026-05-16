@@ -86,7 +86,7 @@ def download_chronos_datasets_and_process(
     os.makedirs(np_folder, exist_ok=True)
 
     _download_tsmixup(hf_folder, np_folder, tqdm)
-    _download_kernel_synth(hf_folder, np_folder, tqdm)
+    #_download_kernel_synth(hf_folder, np_folder, tqdm)
 
 
 def _hf_download(
@@ -126,7 +126,7 @@ def _download_tsmixup(hf_folder: str, np_folder: str, tqdm) -> None:
         """Yield valid (no NaN, length ≥ MAX_LEN) samples from parquet files."""
         ds = datasets.load_dataset(
             "parquet",
-            data_files=f"{folder}/*.parquet",
+            data_files=f"{folder}/training_corpus/tsmixup_10m/*.parquet",
             split="train",
             streaming=True,
         ).select_columns(["target"])
@@ -169,7 +169,7 @@ def _download_kernel_synth(hf_folder: str, np_folder: str, tqdm) -> None:
 
     ds = datasets.load_dataset(
         "autogluon/chronos_datasets",
-        local_dir,
+        local_dir+"/training_corpus/kernel_synth_1m/",
         streaming=False,
         split="train",
     ).select_columns(["target"])
@@ -194,6 +194,6 @@ def _download_kernel_synth(hf_folder: str, np_folder: str, tqdm) -> None:
 # ── Entry point ───────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
-    DOWNLOAD = False
+    DOWNLOAD = True
     if DOWNLOAD:
         download_chronos_datasets_and_process()

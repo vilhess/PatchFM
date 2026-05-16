@@ -29,6 +29,29 @@ def get_dataset(seq_len=1024):
     mixup_5 = InterMixup(
         [art_trainset, gift_trainset], K=4, alpha=1.5, n_samples=200_000
     )
+    #### BELOW : added recently, not sure if it will be kept, but it is a good example of how to use InterMixup with two datasets
+    mixup_6 = InterMixup(
+        [tsmixup, utsd_trainset], K=4, alpha=1.5, n_samples=200_000
+    )
+    mixup_7 = InterMixup(
+        [tsmixup, gift_trainset], K=4, alpha=1.5, n_samples=200_000
+    )
+    mixup_8 = InterMixup(
+        [kernel_synth, utsd_trainset], K=4, alpha=1.5, n_samples=200_000
+    )
+    mixup_9 = InterMixup(
+        [kernel_synth, gift_trainset], K=4, alpha=1.5, n_samples=200_000
+    )
+    mixup_10 = InterMixup(
+        [tsmixup, kernel_synth], K=4, alpha=1.5, n_samples=200_000
+    )
+    mixup_11 = InterMixup(
+        [tsmixup, gift_trainset], K=4, alpha=1.5, n_samples=200_000
+    ) 
+    mixup_12 = InterMixup(
+        [utsd_trainset, gift_trainset], K=4, alpha=1.5, n_samples=200_000
+    )
+
 
     return torch.utils.data.ConcatDataset(
         [
@@ -42,5 +65,13 @@ def get_dataset(seq_len=1024):
             mixup_3,
             mixup_4,
             mixup_5,
+            ##### BELOW : added recently, not sure if it will be kept, but it is a good example of how to use InterMixup with two datasets
+            mixup_6,
+            mixup_7,
+            mixup_8,
+            mixup_9,
+            mixup_10,
+            mixup_11,
+            mixup_12,
         ]
     )

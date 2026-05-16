@@ -18,7 +18,6 @@ class PatchFMLit(L.LightningModule):
             n_layers_encoder=model_config.n_layers_encoder,
             dropout=train_config.dropout,
             quantiles=model_config.quantiles,
-            use_xsa=model_config.use_xsa,
         )
         self.criterion = MultiQuantileLoss(self.model.quantiles)
 
@@ -28,13 +27,15 @@ class PatchFMLit(L.LightningModule):
     def training_step(self, batch, batch_idx):
         x = batch
 
-        # Data augmentation: random sign flip and time flip
+        ###
+        #  Data augmentation: random sign flip and time flip
         sign_flip = torch.where(
             torch.randn(x.size(0), 1, device=x.device) > 0, 1.0, -1.0
         )
         x = sign_flip * x
         time_flip = torch.randn((x.size(0)), device=x.device) > 0.0
         x[time_flip] = x[time_flip].flip(dims=[1])
+        ###
 
         prediction, y = self.model(x)
         prediction = prediction[:, :-1]

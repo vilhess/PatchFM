@@ -6,5 +6,6 @@ from dataset.artificial import (
 )
 from dataset.chronosdata import ChronosDataset, ChronosDataset_mmap
 from dataset.get_data import get_dataset
-from dataset.mixup import MixUP
+from dataset.mixup import InnerMixUP, InterMixup
+from dataset.gift import GiftEvalPretrain
 from dataset.utsd import UTSDataset

@@ -5,7 +5,6 @@ import datasets
 import fev
 import pandas as pd
 import torch
-from PIL.ImageOps import flip
 from tqdm import tqdm
 
 #from patchfm import Forecaster, PatchFMConfig # from pypi package
@@ -55,7 +54,7 @@ def predict_with_model(
         for batch in batchify(loaded_targets, batch_size=batch_size, max_context_length=max_context_length):
             
             pred, quantiles = model(
-                batch, quantiles=task.quantile_levels, forecast_horizon=task.horizon, flip_equivariance=False
+                batch, quantiles=task.quantile_levels, forecast_horizon=task.horizon, flip_equivariance=True
             )
             all_preds.append(pred.cpu())
             all_quantiles.append(quantiles.cpu())
@@ -79,10 +78,10 @@ def predict_with_model(
 
 if __name__ == "__main__":
 
-    model_name="PatchFM-noflip"
+    model_name="PatchFM_5layer_120k"
 
     num_tasks = None 
-    config = PatchFMConfig(compile=True, load_from_hub=False, ckpt_path="../ckpts/patchfm.ckpt")
+    config = PatchFMConfig(compile=True, load_from_hub=True, ckpt_path="../ckpts/patchfm_layer5_120k.ckpt", d_model=2048, n_heads=32, n_layers_encoder=5)
     model = Forecaster(config)
     benchmark = fev.Benchmark.from_yaml(
         "https://raw.githubusercontent.com/autogluon/fev/refs/heads/main/benchmarks/fev_bench/tasks.yaml"
