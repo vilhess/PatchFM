@@ -46,7 +46,7 @@ def main():
 
     model = PatchFMLit(train_config=train_cfg, model_config=model_cfg)
 
-    trainset = get_dataset(seq_len=train_cfg.seq_len, target_len=model_cfg.patch_len)
+    trainset = get_dataset(seq_len=train_cfg.seq_len)
     trainloader = torch.utils.data.DataLoader(
         trainset,
         batch_size=train_cfg.batch_size,

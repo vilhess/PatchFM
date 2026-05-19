@@ -78,10 +78,10 @@ def predict_with_model(
 
 if __name__ == "__main__":
 
-    model_name="PatchFM_5layer_120k"
+    model_name="PatchFM"
 
     num_tasks = None 
-    config = PatchFMConfig(compile=True, load_from_hub=True, ckpt_path="../ckpts/patchfm_layer5_120k.ckpt", d_model=2048, n_heads=32, n_layers_encoder=5)
+    config = PatchFMConfig(compile=True, load_from_hub=False, ckpt_path="../ckpts/hope.ckpt", d_model=2048, n_heads=32, n_layers_encoder=6)
     model = Forecaster(config)
     benchmark = fev.Benchmark.from_yaml(
         "https://raw.githubusercontent.com/autogluon/fev/refs/heads/main/benchmarks/fev_bench/tasks.yaml"

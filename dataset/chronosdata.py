@@ -86,7 +86,7 @@ def download_chronos_datasets_and_process(
     os.makedirs(np_folder, exist_ok=True)
 
     _download_tsmixup(hf_folder, np_folder, tqdm)
-    #_download_kernel_synth(hf_folder, np_folder, tqdm)
+    _download_kernel_synth(hf_folder, np_folder, tqdm)
 
 
 def _hf_download(
@@ -97,7 +97,8 @@ def _hf_download(
             "huggingface-cli",
             "download",
             repo_id,
-            f'--include "{include_glob}"',
+            f'--include',
+            include_glob,
             "--repo-type=dataset",
             "--local-dir",
             local_dir,
@@ -168,8 +169,8 @@ def _download_kernel_synth(hf_folder: str, np_folder: str, tqdm) -> None:
     )
 
     ds = datasets.load_dataset(
-        "autogluon/chronos_datasets",
-        local_dir+"/training_corpus/kernel_synth_1m/",
+        "parquet",
+        data_files=local_dir+"/training_corpus/kernel_synth_1m/",
         streaming=False,
         split="train",
     ).select_columns(["target"])
@@ -194,6 +195,6 @@ def _download_kernel_synth(hf_folder: str, np_folder: str, tqdm) -> None:
 # ── Entry point ───────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
-    DOWNLOAD = True
+    DOWNLOAD = False
     if DOWNLOAD:
         download_chronos_datasets_and_process()

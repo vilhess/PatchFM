@@ -192,7 +192,6 @@ With this strategy, the median prediction (0.5 quantile) does **not necessarily*
 This discrepancy arises because the *quantile collapse* step aggregates predictions across all possible quantile paths. As a result, the median is computed from the combined multi-path distribution rather than from a single deterministic trajectory, which can lead to different estimates compared to the single-path (median-only) autoregressive approach.
 
 ## Datasets
-- UTSD (Unified Time Series Dataset) [UTSD]: seven domains (Energy, IoT, Nature, Web, Health, Transport, Environment). We work with UTSD-12G (~18M series after preprocessing).
 - GIFT-Eval pretraining dataset [GIFT]: aligned with the GIFT-Eval dataset but without data leakage issue with the benchmark. The dataset contains approximately 71 univariate and 17 multivariate time series datasets from various
 domains and various frequencies. After preprocessing, this yields approximately 600K univariate series. 
 - Chronos synthetic datasets [Chronos]: two large synthetic datasets generated with Chronos, one with TSMixup and one with KernelSynth. Each contains approximately 10 million univariate series and 1 million respectively, each signal of length 1024.
@@ -213,11 +212,9 @@ domains and various frequencies. After preprocessing, this yields approximately 
 
 - `dataset/` — data loading and preprocessing
   - `artificial.py` — synthetic dataset : artificial signals + TSMixup + KernelSynth
-  - `utsd.py` — Unified Time Series Dataset (UTSD) loading and preprocessing
   - `gift.py` — GIFT-Eval pretraining dataset loading and preprocessing
   - `get_data.py` — utility to fetch and preprocess datasets
   - `chronosdata.py` — loading of the synthetic datasets generated with Chronos (TSMixup and KernelSynth) with download functions integrated
-  - `generate_data.py` — utility to generate and save the KernelSynth dataset (long to generate)
 
 - `configs/` — model and training configurations
 - `notebooks/inference` — how to load a trained model and generate forecasts
