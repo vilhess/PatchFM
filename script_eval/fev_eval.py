@@ -7,12 +7,12 @@ import pandas as pd
 import torch
 from tqdm import tqdm
 
-#from patchfm import Forecaster, PatchFMConfig # from pypi package
+from patchfm import Forecaster, PatchFMConfig # from pypi package
 
 sys.path.append("..")  
 
-from configs import PatchFMConfig
-from model import Forecaster
+#from configs import PatchFMConfig
+#from model import Forecaster
 
 datasets.disable_progress_bars()
 
@@ -83,6 +83,7 @@ if __name__ == "__main__":
     num_tasks = None 
     config = PatchFMConfig(compile=True, load_from_hub=False, ckpt_path="../ckpts/hope.ckpt", d_model=2048, n_heads=32, n_layers_encoder=6)
     model = Forecaster(config)
+
     benchmark = fev.Benchmark.from_yaml(
         "https://raw.githubusercontent.com/autogluon/fev/refs/heads/main/benchmarks/fev_bench/tasks.yaml"
     )
