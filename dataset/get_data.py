@@ -2,13 +2,13 @@ import torch
 
 from dataset.artificial import artificial_dataset
 from dataset.chronosdata import ChronosDataset, ChronosDataset_mmap
-from dataset.gift import GiftEvalPretrain
+from dataset.gift import GiftEvalDataset
 from dataset.mixup import InnerMixUP, InterMixup
 
 
 def get_dataset(seq_len=1024):
     art_trainset = artificial_dataset(seq_len=seq_len, noise=True)
-    gift_trainset = GiftEvalPretrain(
+    gift_trainset = GiftEvalDataset(
         path="data/giftpretrain/", input_len=seq_len, min_stride=32, max_samples=1000
     )
     kernel_synth = ChronosDataset(file_path="data/training_corpus_kernel_synth_1m.npz")

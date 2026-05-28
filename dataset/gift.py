@@ -233,13 +233,15 @@ class DatasetGiftEval:
         return test_data
 
 
-class GiftEvalPretrain(Dataset):
+class GiftEvalDataset(Dataset):
     def __init__(
         self,
         path="path/to/gift_pretrain_dataset/",
+        pretrain=True,
         input_len=None,
         min_stride=32,
         max_samples=1000,
+        download=False,
     ):
         self.input_len = input_len
         self.seq_len = input_len
@@ -249,24 +251,38 @@ class GiftEvalPretrain(Dataset):
 
         self.path = path
 
+        if pretrain:
+            assert "pretrain" in path, "Gift-Pretrain dataset path should contain 'pretrain'"
+        else:
+            assert "eval" in path, "Gift-Eval dataset path should contain 'eval'"
+
         gift_eval_path = Path(path)
         if not os.path.exists(gift_eval_path.as_posix()):
-            gift_eval_path.parent.mkdir(parents=True, exist_ok=True)
-            import subprocess
-
-            subprocess.run(
-                [
-                    "huggingface-cli",
-                    "download",
-                    "Salesforce/GiftEvalPretrain",
-                    "--repo-type=dataset",
-                    "--local-dir",
-                    path,
-                    "--cache-dir",
-                    path,
-                ],
-                check=True,
-            )
+            if download:
+                gift_eval_path.parent.mkdir(parents=True, exist_ok=True)
+                import subprocess
+                if pretrain:
+                    repo_name = "Salesforce/GiftPretrain"
+                else:
+                    repo_name = "Salesforce/GiftEval"
+                subprocess.run(
+                    [
+                        "huggingface-cli",
+                        "download",
+                       f"Salesforce/{repo_name}",
+                        "--repo-type=dataset",
+                        "--local-dir",
+                        path,
+                        "--cache-dir",
+                        path,
+                    ],
+                    check=True,
+                )
+            else:
+                raise FileNotFoundError(
+                    f"GiftEval dataset not found at {gift_eval_path.as_posix()}. "
+                    "Set download=True to download it from Hugging Face."
+                )
 
         # discover datasets
         dataset_names = []
