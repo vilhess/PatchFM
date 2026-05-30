@@ -1,10 +1,10 @@
-# A tutorial on how to build a Foundation Model for Univariate Time Series Forecasting
+# A Foundation Model for Univariate Time Series Forecasting
 
 A concise, reproducible recipe for training a transformer-based, patch-to-patch forecasting model for univariate time series. The approach mirrors Large Language Model (LLM) practices (next-token → next-patch) while remaining lightweight compared to a classic LLM and practical.
 
 Our model (with leakage) is deployed on the [TS-Arena benchmark](https://ts-arena.live) and achieves competitive performance against state-of-the-art methods under the name `LITIS/PatchFM-Large`.
 
-## Resuls on the FEV benchmark:
+## Results on the FEV benchmark:
 
 **Our model (without leakage) is competitive with the state-of-the-art notably compared to [MOIRAI2.0](https://arxiv.org/pdf/2511.11698)**
 
