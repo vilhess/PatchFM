@@ -2,11 +2,11 @@
 
 A concise, reproducible recipe for training a transformer-based, patch-to-patch forecasting model for univariate time series. The approach mirrors Large Language Model (LLM) practices (next-token → next-patch) while remaining lightweight compared to a classic LLM and practical.
 
-Our model is deployed on the [TS-Arena benchmark](https://ts-arena.live) and achieves competitive performance against state-of-the-art methods under the name `LITIS/PatchFM-Large`.
+Our model (with leakage) is deployed on the [TS-Arena benchmark](https://ts-arena.live) and achieves competitive performance against state-of-the-art methods under the name `LITIS/PatchFM-Large`.
 
 ## Resuls on the FEV benchmark:
 
-**Our model is competitive with the state-of-the-art notably compared to [MOIRAI2.0](https://arxiv.org/pdf/2511.11698)**
+**Our model (without leakage) is competitive with the state-of-the-art notably compared to [MOIRAI2.0](https://arxiv.org/pdf/2511.11698)**
 
 | Model Name           | Win Rate | Skill Score |
 |----------------------|----------|-------------|
@@ -40,6 +40,14 @@ Our model is deployed on the [TS-Arena benchmark](https://ts-arena.live) and ach
 
 ### from source code
 
+> **⚠️ Important:** Two pretrained versions of PatchFM are available:
+
+>
+
+> - **`PatchFM-Leakage`**: trained on both the GIFT-Eval and BOOM datasets. This version may provide higher benchmark performance but includes training data that overlaps with commonly used evaluation datasets.
+
+> - **`PatchFM`** (**recommended for fair evaluation**): trained without any commonly used benchmark datasets, preventing potential data leakage and ensuring a more reliable assessment of generalization performance.
+
 1. Clone the repository and install dependencies
 ```bash
 git clone https://github.com/vilhess/PatchFM
@@ -55,7 +63,7 @@ from configs import PatchFMConfig
 from model import Forecaster
 
 # --- Instantiate model ---
-config = PatchFMConfig(load_from_hub=True) 
+config = PatchFMConfig(load_from_hub=True, full_leakage=False)  # set full_leakage=True to load the version trained with data leakage
 model = Forecaster(config)
 
 # --- Inference ---
@@ -77,6 +85,7 @@ import torch
 
 from patchfm import Forecaster, PatchFMConfig
 
+config = PatchFMConfig(full_leakage=False)
 # same as above
 pred_median, pred_quantiles = model(seq, forecast_horizon=forecast_horizon, quantiles=[0.1, 0.5, 0.9], flip_equivariance=True)  #  (batch, time), (batch, time, quantiles)
 ```

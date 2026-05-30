@@ -30,11 +30,18 @@ class Forecaster(nn.Module):
         assert (
             config["load_from_hub"] or config["ckpt_path"] is not None
         ), "Either load_from_hub must be True or ckpt_path must be provided."
+        assert not (
+            config["load_from_hub"] and config["ckpt_path"] is not None 
+        ), "Only one of load_from_hub or ckpt_path should be provided."
 
         # Load weights either from HF Hub or local checkpoint
         if config["load_from_hub"]:
-            print("Loading base model from HuggingFace Hub...")
-            base_model = PatchFM.from_pretrained("vilhess/PatchFM")
+            if config["full_leakage"]:
+                print("Loading leaked model from HuggingFace Hub...")
+                base_model = PatchFM.from_pretrained("vilhess/PatchFM-Leakage")
+            else:
+                print("Loading base model from HuggingFace Hub...")
+                base_model = PatchFM.from_pretrained("vilhess/PatchFM")
 
             self._init_from_base(base_model)
 

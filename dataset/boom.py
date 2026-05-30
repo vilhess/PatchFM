@@ -105,13 +105,13 @@ class MultivariateToUnivariate(Transformation):
                 yield univariate_entry
 
 
-class DatasetGiftEval:
+class DatasetBoom:
     def __init__(
         self,
         name: str,
         term: Term | str = Term.SHORT,
         to_univariate: bool = True,
-        storage_dir: str = "/path/to/giftdataset/gifteval",
+        storage_dir: str = "/path/to/boomdataset",
     ):
 
         storage_path = Path(storage_dir)
@@ -233,11 +233,10 @@ class DatasetGiftEval:
         return test_data
 
 
-class GiftEvalDataset(Dataset):
+class BoomDataset(Dataset):
     def __init__(
         self,
-        path="path/to/gift_pretrain_dataset/",
-        pretrain=True,
+        path="path/to/boom_dataset/",
         input_len=None,
         min_stride=32,
         max_samples=1000,
@@ -251,25 +250,16 @@ class GiftEvalDataset(Dataset):
 
         self.path = path
 
-        if pretrain:
-            assert "pretrain" in path, "Gift-Pretrain dataset path should contain 'pretrain'"
-        else:
-            assert "eval" in path, "Gift-Eval dataset path should contain 'eval'"
-
-        gift_eval_path = Path(path)
-        if not os.path.exists(gift_eval_path.as_posix()):
+        boom_path = Path(path)
+        if not os.path.exists(boom_path.as_posix()):
             if download:
-                gift_eval_path.parent.mkdir(parents=True, exist_ok=True)
+                boom_path.parent.mkdir(parents=True, exist_ok=True)
                 import subprocess
-                if pretrain:
-                    repo_name = "Salesforce/GiftPretrain"
-                else:
-                    repo_name = "Salesforce/GiftEval"
                 subprocess.run(
                     [
                         "huggingface-cli",
                         "download",
-                       f"Salesforce/{repo_name}",
+                       f"Datadog/BOOM",
                         "--repo-type=dataset",
                         "--local-dir",
                         path,
@@ -280,13 +270,13 @@ class GiftEvalDataset(Dataset):
                 )
             else:
                 raise FileNotFoundError(
-                    f"GiftEval dataset not found at {gift_eval_path.as_posix()}. "
+                    f"Boom dataset not found at {boom_path.as_posix()}. "
                     "Set download=True to download it from Hugging Face."
                 )
 
         # discover datasets
         dataset_names = []
-        for dataset_dir in gift_eval_path.iterdir():
+        for dataset_dir in boom_path.iterdir():
             if dataset_dir.name.startswith("."):
                 continue
             if dataset_dir.is_dir():
@@ -311,7 +301,7 @@ class GiftEvalDataset(Dataset):
 
         for item in tqdm(self.dataset_name):
             try:
-                dataset = DatasetGiftEval(
+                dataset = DatasetBoom(
                     name=item, term="long", to_univariate=True, storage_dir=self.path
                 )
                 train_data_iter = dataset.training_dataset
@@ -382,3 +372,15 @@ class GiftEvalDataset(Dataset):
 
     def __len__(self):
         return self.n_window_list[-1]
+
+
+
+if __name__ == "__main__":
+    dataset = BoomDataset(
+        path="/lustre/fsn1/projects/rech/ulm/uww31rp/huggingface/boom",
+        input_len=512,
+        min_stride=32,
+        max_samples=1000,
+        download=False,
+    )
+    print(f"Total samples in BoomDataset: {len(dataset)}")

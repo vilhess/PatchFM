@@ -14,7 +14,9 @@ class PatchFMConfig:
 
     # for inference
     load_from_hub: bool = True
-    ckpt_path: str = "ckpts/patchfm.ckpt"
+    full_leakage: bool = False
+
+    ckpt_path: str = None
     compile: bool = True
 
     def __getitem__(self, key):
