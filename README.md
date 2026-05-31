@@ -14,7 +14,7 @@ Our model (with leakage) is deployed on the [TS-Arena benchmark](https://ts-aren
 | (🥈) TiRex               | 0.8092   | 0.4268      |
 | (🥉) TimesFM-2.5         | 0.8085   | 0.4668      |
 | (4) Toto-1.0            | 0.7069   | 0.4110      |
-| (5) **PatchFM (us)**             | 0.6677   | 0.3983      |
+| (5) **PatchFM (us)**             | 0.6684   | 0.3984      |
 | (6) Moirai-2.0          | 0.6546   | 0.4026      |
 | (7) Chronos-Bolt        | 0.6277   | 0.3889      |
 | (8) Sundial-Base        | 0.4446   | 0.3387      |
@@ -44,9 +44,9 @@ Our model (with leakage) is deployed on the [TS-Arena benchmark](https://ts-aren
 
 >
 
-> - **`PatchFM-Leakage`**: trained on both the GIFT-Eval and BOOM datasets. This version may provide higher benchmark performance but includes training data that overlaps with commonly used evaluation datasets.
+> - **`PatchFM-Leakage`**: trained on the GIFT-Eval datasets. This version may provide higher benchmark performance but includes training data that overlaps with the commonly used evaluation datasets.
 
-> - **`PatchFM`** (**recommended for fair evaluation**): trained without any commonly used benchmark datasets, preventing potential data leakage and ensuring a more reliable assessment of generalization performance.
+> - **`PatchFM`** (**recommended for fair evaluation**): trained without any commonly used benchmark (except BOOM), preventing potential data leakage and ensuring a more reliable assessment of generalization performance.
 
 1. Clone the repository and install dependencies
 ```bash
@@ -205,6 +205,7 @@ This discrepancy arises because the *quantile collapse* step aggregates predicti
 domains and various frequencies. After preprocessing, this yields approximately 600K univariate series. 
 - Chronos synthetic datasets [Chronos]: two large synthetic datasets generated with Chronos, one with TSMixup and one with KernelSynth. Each contains approximately 10 million univariate series and 1 million respectively, each signal of length 1024.
 - Artificial: ~1M synthetic series (sinusoidal, linear, polynomial, logarithmic) plus mixtures via TSMixup [Chronos]; Gaussian Process samples via KernelSynth (mixtures of RBF/periodic/linear kernels with swept hyperparameters).
+- BOOM: Approximately 5 million time series of length 1024 sampled from the BOOM dataset [BOOM]. It is important to note that the BOOM dataset, which is also used as an evaluation benchmark, is included in the training data of both PatchFM variants (with and without benchmark leakage) to increase data diversity. Consequently, neither version can be fairly evaluated on the BOOM benchmark. Upon request, we can provide an alternative checkpoint trained without any BOOM data, enabling a fair evaluation on this benchmark.
 
 ## Repository Layout
 
@@ -224,6 +225,7 @@ domains and various frequencies. After preprocessing, this yields approximately 
   - `gift.py` — GIFT-Eval pretraining dataset loading and preprocessing
   - `get_data.py` — utility to fetch and preprocess datasets
   - `chronosdata.py` — loading of the synthetic datasets generated with Chronos (TSMixup and KernelSynth) with download functions integrated
+  - `boom.py` — loading of the BOOM dataset with download functions integrated
 
 - `configs/` — model and training configurations
 - `notebooks/inference` — how to load a trained model and generate forecasts
