@@ -65,14 +65,14 @@ class Forecaster(nn.Module):
         """Initialize modules from scratch."""
         self.revin = CausalRevIN()
         self.proj_embedding = ResidualBlock(
-            in_dim=self.patch_len, hid_dim=2 * self.patch_len, out_dim=self.d_model
+            in_dim=self.patch_len, hid_dim=4 * self.d_model, out_dim=self.d_model 
         )
         self.transformer_encoder = TransformerEncoder(
             d_model=self.d_model, n_heads=self.n_heads, n_layers=self.n_layers_encoder
         )
         self.proj_output = ResidualBlock(
             in_dim=self.d_model,
-            hid_dim=2 * self.d_model,
+            hid_dim=4 * self.d_model,
             out_dim=self.patch_len * self.n_quantiles,
         )
 

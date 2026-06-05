@@ -13,7 +13,7 @@ class ResidualBlock(nn.Module):
         self.hidden_layer = nn.Linear(in_dim, hid_dim)
         self.output_layer = nn.Linear(hid_dim, out_dim)
         self.residual_layer = nn.Linear(in_dim, out_dim)
-        self.act = nn.ReLU()
+        self.act = nn.SiLU()
 
     def forward(self, x):
         hid = self.act(self.hidden_layer(x))
@@ -145,7 +145,7 @@ class PatchFM(nn.Module):
         self.revin = CausalRevIN()
 
         self.proj_embedding = ResidualBlock(
-            in_dim=patch_len, hid_dim=2 * patch_len, out_dim=d_model, dropout=dropout
+            in_dim=patch_len, hid_dim=4 * d_model, out_dim=d_model, dropout=dropout
         )
         self.dp = nn.Dropout(dropout)
         self.transformer_encoder = TransformerEncoder(
@@ -157,7 +157,7 @@ class PatchFM(nn.Module):
 
         self.proj_output = ResidualBlock(
             in_dim=d_model,
-            hid_dim=2 * d_model,
+            hid_dim=4 * d_model,
             out_dim=patch_len * self.n_quantiles,
             dropout=dropout,
         )
@@ -180,8 +180,8 @@ class PatchFM(nn.Module):
         x = rearrange(
             x, "b (pn pl) -> b pn pl", pl=self.patch_len
         )  # Reshape to (bs, patch_num, patch_len)
-        if self.training:
-            x_patch = x[:, 1:, :].clone().detach()
+        x_patch = x[:, 1:, :].clone().detach()
+
         x = self.revin(x, mode="norm")
 
         x = self.proj_embedding(x)  # bs, pn, d_model
@@ -198,8 +198,6 @@ class PatchFM(nn.Module):
             pl=self.patch_len,
             q=self.n_quantiles,
         )  # Reshape to (bs, patch_len, n_quantiles)
+        
+        return forecasting, x_patch
 
-        if self.training:
-            return forecasting, x_patch
-        else:
-            return forecasting

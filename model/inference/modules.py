@@ -190,7 +190,7 @@ class ResidualBlock(nn.Module):
         self.hidden_layer = nn.Linear(in_dim, hid_dim)
         self.output_layer = nn.Linear(hid_dim, out_dim)
         self.residual_layer = nn.Linear(in_dim, out_dim)
-        self.act = nn.ReLU()
+        self.act = nn.SiLU()
 
     def forward(self, x):
         hid = self.act(self.hidden_layer(x))
@@ -337,13 +337,13 @@ class PatchFM(nn.Module, PyTorchModelHubMixin):
         # Components
         self.revin = CausalRevIN()
         self.proj_embedding = ResidualBlock(
-            in_dim=self.patch_len, hid_dim=2 * self.patch_len, out_dim=self.d_model
+            in_dim=self.patch_len, hid_dim=4 * self.d_model, out_dim=self.d_model
         )
         self.transformer_encoder = TransformerEncoder(
             d_model=self.d_model, n_heads=self.n_heads, n_layers=self.n_layers_encoder
         )
         self.proj_output = ResidualBlock(
             in_dim=self.d_model,
-            hid_dim=2 * self.d_model,
+            hid_dim=4 * self.d_model,
             out_dim=self.patch_len * self.n_quantiles,
         )
