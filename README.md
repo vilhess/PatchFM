@@ -201,11 +201,12 @@ With this strategy, the median prediction (0.5 quantile) does **not necessarily*
 This discrepancy arises because the *quantile collapse* step aggregates predictions across all possible quantile paths. As a result, the median is computed from the combined multi-path distribution rather than from a single deterministic trajectory, which can lead to different estimates compared to the single-path (median-only) autoregressive approach.
 
 ## Datasets
-- GIFT-Eval pretraining dataset [GIFT]: aligned with the GIFT-Eval dataset but without data leakage issue with the benchmark. The dataset contains approximately 71 univariate and 17 multivariate time series datasets from various
+- GIFT-pretraining dataset [GIFT]: aligned with the GIFT-Eval dataset but without data leakage issue with the benchmark. The dataset contains approximately 71 univariate and 17 multivariate time series datasets from various
 domains and various frequencies. After preprocessing, this yields approximately 600K univariate series. 
 - Chronos synthetic datasets [Chronos]: two large synthetic datasets generated with Chronos, one with TSMixup and one with KernelSynth. Each contains approximately 10 million univariate series and 1 million respectively, each signal of length 1024.
 - Artificial: ~1M synthetic series (sinusoidal, linear, polynomial, logarithmic) plus mixtures via TSMixup [Chronos]; Gaussian Process samples via KernelSynth (mixtures of RBF/periodic/linear kernels with swept hyperparameters).
 - BOOM: Approximately 5 million time series of length 1024 sampled from the BOOM dataset [BOOM]. It is important to note that the BOOM dataset, which is also used as an evaluation benchmark, is included in the training data of both PatchFM variants (with and without benchmark leakage) to increase data diversity. Consequently, neither version can be fairly evaluated on the BOOM benchmark. Upon request, we can provide an alternative checkpoint trained without any BOOM data, enabling a fair evaluation on this benchmark.
+- TSMixup [Chronos]: mixing synthetic datasets and GIFT-pretraining datasets to further increase diversity.
 
 ## Repository Layout
 
