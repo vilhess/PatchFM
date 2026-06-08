@@ -2,28 +2,30 @@
 
 A concise, reproducible recipe for training a transformer-based, patch-to-patch forecasting model for univariate time series. The approach mirrors Large Language Model (LLM) practices (next-token → next-patch) while remaining lightweight compared to a classic LLM and practical.
 
+The model card is available on `assets/modelcard.pdf`.
+
 Our model (with leakage) is deployed on the [TS-Arena benchmark](https://ts-arena.live) and achieves competitive performance against state-of-the-art methods under the name `LITIS/PatchFM-Large`.
 
 ## Results on the FEV benchmark:
 
 **Our model (without leakage) is competitive with the state-of-the-art notably compared to [MOIRAI2.0](https://arxiv.org/pdf/2511.11698)**
 
-| Model Name           | Win Rate | Skill Score |
-|----------------------|----------|-------------|
-| (🥇) Chronos-2           | 0.9008   | 0.4728      |
-| (🥈) TiRex               | 0.8092   | 0.4268      |
-| (🥉) TimesFM-2.5         | 0.8085   | 0.4668      |
-| (4) Toto-1.0            | 0.7069   | 0.4110      |
-| (5) **PatchFM (us)**             | 0.6684   | 0.3984      |
-| (6) Moirai-2.0          | 0.6546   | 0.4026      |
-| (7) Chronos-Bolt        | 0.6277   | 0.3889      |
-| (8) Sundial-Base        | 0.4446   | 0.3387      |
-| (9) CatBoost (Recursive)| 0.3362   | 0.2301      |
-| (10) LightGBM (Recursive)| 0.3123   | 0.2168      |
-| (11) AutoTheta           | 0.2938   | 0.0546      |
-| (12) Seasonal Naive      | 0.2058   | 0.0000      |
-| (13) Naive               | 0.1404   | -0.4540     |
-| (14) Drift               | 0.0915   | -0.4578     |
+| Model | Win Rate | Skill Score |
+|---------|----------:|------------:|
+| Chronos-2 | 0.89 | 0.47 |
+| TiRex | 0.81 | 0.43 |
+| TimesFM-2.5 | 0.81 | 0.47 |
+| Toto-1.0 | 0.71 | 0.41 |
+| **PatchFM** | 0.69 | 0.40 |
+| Moirai-2.0 | 0.65 | 0.40 |
+| Chronos-Bolt | 0.62 | 0.39 |
+| Sundial-Base | 0.44 | 0.34 |
+| CatBoost | 0.34 | 0.23 |
+| LightGBM | 0.31 | 0.21 |
+| AutoTheta | 0.29 | 0.055 |
+| Seasonal Naive | 0.21 | 0.00 |
+| Naive | 0.14 | -0.45 |
+| Drift | 0.092 | -0.46 |
 
 
 ## Highlights
