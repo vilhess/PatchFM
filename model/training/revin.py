@@ -26,8 +26,8 @@ class CausalRevIN(nn.Module):
                 self.cached_mean is not None and self.cached_std is not None
             ), "Call forward(..., 'norm') before 'denorm'"
             out = (
-                torch.sinh(x64) * self.cached_std[:, -1:, :]
-                + self.cached_mean[:, -1:, :]
+                torch.sinh(x64) * self.cached_std
+                + self.cached_mean
             )
 
         else:
