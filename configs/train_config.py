@@ -12,7 +12,7 @@ class TrainConfig:
     reach_max: int = 10_000
     iter_cycle: int = 150_000
     dropout: float = 0.1
-    batch_size: int = 256
+    batch_size: int = 512
 
     checkpoint_path: str = "./ckpts/"
     num_workers: int = 21

@@ -19,14 +19,15 @@ class ChronosDataset(Dataset):
         if not os.path.exists(file_path):
             raise FileNotFoundError(f"File not found: {file_path}")
 
-        data = np.load(file_path)["data"]
-        self.data = torch.tensor(data, dtype=torch.float32)
+        self.data = np.load(file_path)["data"]
 
     def __len__(self) -> int:
         return len(self.data)
 
     def __getitem__(self, idx: int) -> torch.Tensor:
-        return _normalize(self.data[idx])
+        sample = self.data[idx]
+        sample = torch.tensor(sample, dtype=torch.float32)
+        return _normalize(sample)
 
 
 class ChronosDataset_mmap(Dataset):
@@ -42,25 +43,29 @@ class ChronosDataset_mmap(Dataset):
                 raise FileNotFoundError(f"File not found: {path}")
 
         n_samples, seq_len = np.load(file_shape_path)
-        raw = np.memmap(
-            file_path, dtype=np.float32, mode="r", shape=(n_samples, seq_len)
+        self.data = np.memmap(
+            file_path, dtype=np.float32, mode="r", shape=(int(n_samples), int(seq_len))
         )
-        data = torch.tensor(raw, dtype=torch.float32)
 
-        nan_mask = torch.isnan(data).any(dim=1)
-        if nan_mask.any():
-            print(
-                f"Warning: Dropping {nan_mask.sum().item()} samples containing NaN values."
-            )
-            data = data[~nan_mask]
-
-        self.data = data
+        # Compute the valid (non-NaN) row indices without materializing the array.
+        # Scan in chunks so we never hold more than one chunk in RAM.
+        valid = []
+        chunk = 100_000
+        for start in range(0, int(n_samples), chunk):
+            block = np.asarray(self.data[start : start + chunk])
+            mask = ~np.isnan(block).any(axis=1)
+            valid.append(np.nonzero(mask)[0] + start)
+        self.valid_idx = np.concatenate(valid)
+        dropped = int(n_samples) - len(self.valid_idx)
+        if dropped:
+            print(f"Warning: Dropping {dropped} samples containing NaN values.")
 
     def __len__(self) -> int:
-        return len(self.data)
+        return len(self.valid_idx)
 
     def __getitem__(self, idx: int) -> torch.Tensor:
-        return _normalize(self.data[idx])
+        row = np.asarray(self.data[self.valid_idx[idx]])  # copy a single row
+        return _normalize(torch.from_numpy(row).float())
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
