@@ -13,19 +13,22 @@ Our model (with leakage) is deployed on the [TS-Arena benchmark](https://ts-aren
 | Model | Win Rate | Skill Score |
 |---------|----------:|------------:|
 | Chronos-2 | 0.89 | 0.47 |
-| TiRex | 0.81 | 0.43 |
 | TimesFM-2.5 | 0.81 | 0.47 |
-| Toto-1.0 | 0.71 | 0.41 |
+| TiRex | 0.81 | 0.43 |
+| FlowState | 0.71 | 0.42 |
+| Toto-1.0 | 0.70 | 0.41 |
 | **PatchFM** | 0.69 | 0.40 |
 | Moirai-2.0 | 0.65 | 0.40 |
 | Chronos-Bolt | 0.62 | 0.39 |
-| Sundial-Base | 0.44 | 0.34 |
-| CatBoost | 0.34 | 0.23 |
-| LightGBM | 0.31 | 0.21 |
-| AutoTheta | 0.29 | 0.055 |
-| Seasonal Naive | 0.21 | 0.00 |
-| Naive | 0.14 | -0.45 |
-| Drift | 0.092 | -0.46 |
+| TFT | 0.47 | 0.32 |
+| Sundial-Base | 0.43 | 0.34 |
+| PatchTST | 0.42 | 0.30 |
+| CatBoost | 0.32 | 0.23 |
+| LightGBM | 0.29 | 0.21 |
+| AutoTheta | 0.28 | 0.05 |
+| Seasonal Naive | 0.19 | 0.00 |
+| Naive | 0.13 | -0.45 |
+| Drift | 0.09 | -0.46 |
 
 
 ## Highlights
