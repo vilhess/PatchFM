@@ -67,6 +67,7 @@ def main():
         fast_dev_run=False,
         callbacks=[checkpoint_callback],
         logger=wandb_logger,
+        gradient_clip_val=0.5
     )
     trainer.fit(model=model, train_dataloaders=trainloader)
 

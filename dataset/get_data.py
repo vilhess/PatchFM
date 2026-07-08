@@ -15,13 +15,14 @@ def get_dataset(seq_len=1024):
         input_len=seq_len, min_stride=32, max_samples=1000, path="path/to/gift/pretrain",
     )
     kernel_synth = ChronosDataset(file_path="path/to/chronos_numpy/training_corpus_kernel_synth_1m.npz")
+    boom = BoomDataset(input_len=seq_len, min_stride=32, max_samples=1000, path="path/to/boom")
 
     mixup = ChronosDataset_mmap("path/to/chronos_numpy/training_corpus_tsmixup_10m_clean.npy", "path/to/chronos_numpy/training_corpus_tsmixup_10m_clean_shape.npy" )
     mixup_1 = InnerMixUP(kernel_synth, K=4, alpha=1.5, n_samples=200_000)
     mixup_2 = InterMixup([gift_pretrain, kernel_synth], K=4, alpha=1.5, n_samples=200_000)
     mixup_3 = InnerMixUP(gift_pretrain, K=4, alpha=1.5, n_samples=200_000)
     mixup_5 = InterMixup([art_trainset, gift_pretrain], K=4, alpha=1.5, n_samples=200_000)
-    return torch.utils.data.ConcatDataset([art_trainset,  gift_pretrain, kernel_synth, mixup, mixup_1, mixup_2, mixup_3, mixup_5])
+    return torch.utils.data.ConcatDataset([art_trainset,  gift_pretrain, kernel_synth, mixup, mixup_1, mixup_2, mixup_3, mixup_5, boom])
 
 def get_dataset_leakage(seq_len=1024):
     art_trainset = artificial_dataset(

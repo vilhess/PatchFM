@@ -190,7 +190,13 @@ class PatchFM(nn.Module):
 
         forecasting = self.proj_output(x)  # bs, pn, patch_len * n_quantiles
 
-        forecasting = self.revin(forecasting, mode="denorm")
+        # Train in the causal asinh space instead of denormalizing the
+        # predictions: quantiles are equivariant under the monotone asinh, and
+        # this keeps errors bounded (no cosh factor in the gradient). Target
+        # patch p+1 is normalized with the stats available at position p.
+        mean = self.revin.cached_mean[:, :-1]
+        std = self.revin.cached_std[:, :-1]
+        y = torch.asinh((x_patch.double() - mean) / std).float()
 
         forecasting = rearrange(
             forecasting,
@@ -198,6 +204,6 @@ class PatchFM(nn.Module):
             pl=self.patch_len,
             q=self.n_quantiles,
         )  # Reshape to (bs, patch_len, n_quantiles)
-        
-        return forecasting, x_patch
+
+        return forecasting, y
 

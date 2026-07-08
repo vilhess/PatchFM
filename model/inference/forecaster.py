@@ -83,6 +83,29 @@ class Forecaster(nn.Module):
         self.transformer_encoder = base_model.transformer_encoder
         self.proj_output = base_model.proj_output
 
+    @staticmethod
+    def _repair_invalid(series: torch.Tensor, fallback: torch.Tensor) -> torch.Tensor:
+        series = series.clone()
+        fallback = torch.where(
+            torch.isfinite(fallback), fallback, torch.zeros_like(fallback)
+        )
+        invalid = ~torch.isfinite(series)
+        t = torch.arange(series.size(1), device=series.device, dtype=series.dtype)
+        for b in torch.nonzero(invalid.any(dim=1)).flatten():
+            valid = ~invalid[b]
+            if not valid.any():
+                series[b] = fallback[b]
+                continue
+            # Anchor at t=-1 with the last context value
+            xp = torch.cat([t.new_full((1,), -1.0), t[valid]])
+            fp = torch.cat([fallback[b : b + 1], series[b][valid]])
+            tq = t[invalid[b]]
+            right = torch.searchsorted(xp, tq).clamp(max=len(xp) - 1)
+            left = (right - 1).clamp(min=0)
+            w = ((tq - xp[left]) / (xp[right] - xp[left]).clamp(min=1e-8)).clamp(0, 1)
+            series[b][invalid[b]] = fp[left] + w * (fp[right] - fp[left])
+        return series
+
     @torch.inference_mode()
     def auto_regressive_quantile_decoding(
         self,
@@ -111,6 +134,9 @@ class Forecaster(nn.Module):
         if pad > 0:
             x = torch.cat([x[:, :1].repeat(1, pad), x], dim=1)
 
+        # Kept as fallback to repair invalid (NaN/Inf) predictions
+        last_context = x[:, -1].clone()
+
         # Reshape into patches
         x = rearrange(x, "b (pn pl) -> b pn pl", pl=self.patch_len)
 
@@ -136,7 +162,21 @@ class Forecaster(nn.Module):
 
         predictions.append(forecasting[:, -1, :, :].detach())
 
+        # Last value preceding each fed-back patch (bs*n_quantiles,),
+        # used as anchor when repairing invalid values
+        prev_last = last_context.repeat_interleave(self.n_quantiles)
+
         for _ in range(rollouts - 1):
+
+            # Repair invalid values before they poison the next forward
+            # pass through the normalization statistics
+            if not torch.isfinite(x).all():
+                print(
+                    "Warning: NaN or Inf values detected in intermediate "
+                    "predictions. Repairing before next rollout."
+                )
+                x = self._repair_invalid(x[:, 0, :], prev_last).unsqueeze(1)
+            prev_last = x[:, 0, -1]
 
             # Forward pass
             x = self.revin(x, mode="norm")
@@ -179,12 +219,23 @@ class Forecaster(nn.Module):
             else pred_quantiles
         )
 
-        if torch.any(torch.isnan(pred_median)) or torch.any(torch.isinf(pred_median)):
+        if not (
+            torch.isfinite(pred_median).all() and torch.isfinite(pred_quantiles).all()
+        ):
             print(
-                "Warning: NaN or Inf values detected in predictions. Returning zeros."
+                "Warning: NaN or Inf values detected in predictions. "
+                "Repairing by interpolation / last context value."
             )
-            pred_median = torch.zeros_like(pred_median)
-            pred_quantiles = torch.zeros_like(pred_quantiles)
+            pred_median = self._repair_invalid(pred_median, last_context)
+            nq = pred_quantiles.size(-1)
+            pred_quantiles = rearrange(
+                self._repair_invalid(
+                    rearrange(pred_quantiles, "b h q -> (b q) h"),
+                    last_context.repeat_interleave(nq),
+                ),
+                "(b q) h -> b h q",
+                q=nq,
+            )
 
         return pred_median, pred_quantiles
 
