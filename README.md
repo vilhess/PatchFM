@@ -8,26 +8,27 @@ Our model (with leakage) is deployed on the [TS-Arena benchmark](https://ts-aren
 
 ## Results on the FEV benchmark:
 
-**Our model (without leakage) is competitive with the state-of-the-art notably compared to [MOIRAI2.0](https://arxiv.org/pdf/2511.11698)**
+**Our model (without leakage) is competitive with (old) state-of-the-art notably compared to [Toto1.0](https://arxiv.org/abs/2407.07874)**
 
 | Model | Win Rate | Skill Score |
 |---------|----------:|------------:|
 | Chronos-2 | 0.89 | 0.47 |
-| TimesFM-2.5 | 0.81 | 0.47 |
-| TiRex | 0.81 | 0.43 |
-| FlowState | 0.71 | 0.42 |
-| Toto-1.0 | 0.70 | 0.41 |
-| **PatchFM** | 0.69 | 0.40 |
-| Moirai-2.0 | 0.65 | 0.40 |
-| Chronos-Bolt | 0.62 | 0.39 |
-| TFT | 0.47 | 0.32 |
-| Sundial-Base | 0.43 | 0.34 |
-| PatchTST | 0.42 | 0.30 |
-| CatBoost | 0.32 | 0.23 |
-| LightGBM | 0.29 | 0.21 |
-| AutoTheta | 0.28 | 0.05 |
-| Seasonal Naive | 0.19 | 0.00 |
-| Naive | 0.13 | -0.45 |
+| TimesFM-2.5 | 0.80 | 0.47 |
+| TiRex | 0.80 | 0.43 |
+| FlowState | 0.70 | 0.42 |
+| TabPFN-TS-3 | 0.69 | 0.43 |
+| Toto-1.0 | 0.69 | 0.41 |
+| **PatchFM** | 0.69 | 0.41 |
+| Moirai-2.0 | 0.64 | 0.40 |
+| Chronos-Bolt | 0.60 | 0.39 |
+| TFT | 0.46 | 0.32 |
+| Sundial-Base | 0.41 | 0.34 |
+| PatchTST | 0.40 | 0.30 |
+| CatBoost | 0.30 | 0.23 |
+| LightGBM | 0.28 | 0.21 |
+| AutoTheta | 0.27 | 0.05 |
+| Seasonal Naive | 0.18 | 0.00 |
+| Naive | 0.12 | -0.45 |
 | Drift | 0.09 | -0.46 |
 
 
