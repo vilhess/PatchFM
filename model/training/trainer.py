@@ -1,8 +1,8 @@
 import lightning as L
 import torch
-import torch.optim as optim
 from lightning.pytorch.utilities import grad_norm
 
+from model.training.muon import MuonAdamW
 from model.training.loss import MultiQuantileLoss
 from model.training.modules import PatchFM
 
@@ -45,8 +45,8 @@ class PatchFMLit(L.LightningModule):
 
     def configure_optimizers(self):
 
-        optimizer = optim.AdamW(
-            self.parameters(), lr=self.hparams.start_lr, weight_decay=0.01
+        optimizer = MuonAdamW(
+            self.parameters(), muon_lr=self.hparams.start_lr, adamw_lr=self.hparams.start_lr
         )
 
         div_factor = self.hparams.max_lr / self.hparams.start_lr
@@ -59,9 +59,10 @@ class PatchFMLit(L.LightningModule):
             pct_start=pct_start,
             div_factor=div_factor,
             final_div_factor=final_div_factor,
+            cycle_momentum=False
         )
         constant = torch.optim.lr_scheduler.ConstantLR(
-            optimizer, factor=final_div_factor, total_iters=1e8
+            optimizer, factor=1./final_div_factor, total_iters=1e8
         )
         scheduler = torch.optim.lr_scheduler.SequentialLR(
             optimizer,

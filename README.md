@@ -10,26 +10,14 @@ Our model (with leakage) is deployed on the [TS-Arena benchmark](https://ts-aren
 
 **Our model (without leakage) is competitive with (old) state-of-the-art notably compared to [Toto1.0](https://arxiv.org/abs/2407.07874)**
 
-| Model | Win Rate | Skill Score |
-|---------|----------:|------------:|
-| Chronos-2 | 0.89 | 0.47 |
-| TimesFM-2.5 | 0.80 | 0.47 |
-| TiRex | 0.80 | 0.43 |
-| FlowState | 0.70 | 0.42 |
-| TabPFN-TS-3 | 0.69 | 0.43 |
-| Toto-1.0 | 0.69 | 0.41 |
-| **PatchFM** | 0.69 | 0.41 |
-| Moirai-2.0 | 0.64 | 0.40 |
-| Chronos-Bolt | 0.60 | 0.39 |
-| TFT | 0.46 | 0.32 |
-| Sundial-Base | 0.41 | 0.34 |
-| PatchTST | 0.40 | 0.30 |
-| CatBoost | 0.30 | 0.23 |
-| LightGBM | 0.28 | 0.21 |
-| AutoTheta | 0.27 | 0.05 |
-| Seasonal Naive | 0.18 | 0.00 |
-| Naive | 0.12 | -0.45 |
-| Drift | 0.09 | -0.46 |
+<div style="overflow-x: auto;">
+
+| Metric | Chronos-2 | TiRex-2 | Toto-2.0-2.5B | Toto-2.0-1B | Toto-2.0-313m | TimesFM-2.5 | TiRex | Toto-2.0-22m | TS-ICL | FlowState | TabPFN-TS-3 | **PatchFM** | citras-fm | Toto-1.0 | Toto-2.0-4m | Moirai-2.0 | Chronos-Bolt | TFT | Sundial-Base | PatchTST | CatBoost | LightGBM | AutoTheta | Seasonal Naive |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| Win Rate | 0.81 | 0.78 | 0.78 | 0.77 | 0.75 | 0.71 | 0.70 | 0.67 | 0.61 | 0.60 | 0.60 | **0.58** | 0.58 | 0.58 | 0.55 | 0.53 | 0.49 | 0.37 | 0.32 | 0.31 | 0.22 | 0.21 | 0.20 | 0.13 |
+| Skill Score | 0.47 | 0.45 | 0.44 | 0.44 | 0.44 | 0.47 | 0.43 | 0.43 | 0.43 | 0.42 | 0.43 | **0.41** | 0.41 | 0.41 | 0.41 | 0.40 | 0.39 | 0.32 | 0.34 | 0.30 | 0.23 | 0.21 | 0.05 | 0.00 |
+
+</div>
 
 
 ## Highlights
@@ -41,6 +29,7 @@ Our model (with leakage) is deployed on the [TS-Arena benchmark](https://ts-aren
 - Autoregressive multi-quantile decoding [MOIRAI2.0](https://arxiv.org/pdf/2511.11698)
 - KV-cache for efficient long-horizon inference
 - flips equivariance during inference (optional) [Reverso](https://arxiv.org/pdf/2602.17634v1)
+- [Muon](https://kellerjordan.github.io/posts/muon/) optimizer for 2D weights and AdamW for the rest, as in Toto 2.0 ([implementation of Muon used](https://arxiv.org/abs/2502.16982))
 
 ## Quick Start
 

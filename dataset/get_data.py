@@ -12,10 +12,10 @@ def get_dataset(seq_len=1024):
         seq_len=seq_len, noise=True
     )
     gift_pretrain = GiftEvalDataset(
-        input_len=seq_len, min_stride=32, max_samples=1000, path="path/to/gift/pretrain",
+        input_len=seq_len, min_stride=32, max_samples=100, path="path/to/gift/pretrain",
     )
     kernel_synth = ChronosDataset(file_path="path/to/chronos_numpy/training_corpus_kernel_synth_1m.npz")
-    boom = BoomDataset(input_len=seq_len, min_stride=32, max_samples=1000, path="path/to/boom")
+    boom = BoomDataset(input_len=seq_len, min_stride=32, max_samples=100, path="path/to/boom")
 
     mixup = ChronosDataset_mmap("path/to/chronos_numpy/training_corpus_tsmixup_10m_clean.npy", "path/to/chronos_numpy/training_corpus_tsmixup_10m_clean_shape.npy" )
     mixup_1 = InnerMixUP(kernel_synth, K=4, alpha=1.5, n_samples=200_000)
@@ -29,12 +29,12 @@ def get_dataset_leakage(seq_len=1024):
         seq_len=seq_len, noise=True
     )
     gift_pretrain = GiftEvalDataset(
-        input_len=seq_len, min_stride=32, max_samples=1000, path="path/to/gift/pretrain",
+        input_len=seq_len, min_stride=32, max_samples=100, path="path/to/gift/pretrain",
     )
     gift_eval = GiftEvalDataset(
-        input_len=seq_len, min_stride=32, max_samples=1000, path="path/to/gift/eval",
+        input_len=seq_len, min_stride=32, max_samples=100, path="path/to/gift/eval",
     )
-    boom = BoomDataset(input_len=seq_len, min_stride=32, max_samples=1000, path="path/to/boom")
+    boom = BoomDataset(input_len=seq_len, min_stride=32, max_samples=100, path="path/to/boom")
     kernel_synth = ChronosDataset(file_path="path/to/chronos_numpy/training_corpus_kernel_synth_1m.npz")
 
     mixup = ChronosDataset_mmap("path/to/chronos_numpy/training_corpus_tsmixup_10m_clean.npy", "path/to/chronos_numpy/training_corpus_tsmixup_10m_clean_shape.npy" )

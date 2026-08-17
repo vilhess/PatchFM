@@ -672,7 +672,7 @@ class SyntheticTimeSeriesDataset(Dataset):
     def __getitem__(self, idx):
         ctx, _ = self.samples[idx]
         if self.noise:
-            std = torch.std(ctx) * 0.1
+            std = torch.std(ctx) * torch.empty(1, device=ctx.device).uniform_(0.0, 0.1)
             ctx = ctx + torch.randn_like(ctx) * std
         mean = ctx.mean()
         std = ctx.std() + 1e-6
