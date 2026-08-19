@@ -59,7 +59,9 @@ class Forecaster(nn.Module):
         self.converter = SeqTypeConverter()
 
         if config["compile"]:
-            self = torch.compile(self)
+            self.proj_embedding = torch.compile(self.proj_embedding)
+            self.transformer_encoder = torch.compile(self.transformer_encoder)
+            self.proj_output = torch.compile(self.proj_output)
 
     def _init_components(self):
         """Initialize modules from scratch."""
