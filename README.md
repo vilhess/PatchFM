@@ -228,6 +228,7 @@ domains and various frequencies. After preprocessing, this yields approximately 
 
 - `dataset/` — data loading and preprocessing
   - `artificial.py` — synthetic dataset : artificial signals + TSMixup + KernelSynth
+  - `synthetic.py` — other synthetic signals (Claude for the generation)
   - `gift.py` — GIFT-Eval pretraining dataset loading and preprocessing
   - `get_data.py` — utility to fetch and preprocess datasets
   - `chronosdata.py` — loading of the synthetic datasets generated with Chronos (TSMixup and KernelSynth) with download functions integrated
