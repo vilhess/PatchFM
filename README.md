@@ -20,6 +20,15 @@ Our model (with leakage) is deployed on the [TS-Arena benchmark](https://ts-aren
 </div>
 
 
+## Acknowledgements
+This work builds on ideas, model designs, and code from the following projects:
+- [TiRex](https://github.com/NX-AI/tirex)
+- [Toto](https://github.com/datadog/toto)
+- [TimesFM](https://github.com/google-research/timesfm)
+- [Chronos](https://github.com/amazon-science/chronos-forecasting)
+We are grateful to their authors.
+
+
 ## Highlights
 - Next-patch prediction objective (autoregressive, causal)
 - Patch-based representation of time series (tokens ↔ patches)
@@ -114,6 +123,7 @@ Aggregate over positions, patch elements, and quantiles.
 - Input MLP: $\mathbb{R}^{P_{len}} \to \mathbb{R}^{dim}$ residual 2-layer MLP (ReLU)
 - Multi-Head Attention: causal mask, RoPE; queries/keys/values per head
 - FFN: SwiGLU (SiLU-gated), pre-norm + residual
+- QK-Norm with per-dimension adaptive scaling on queries, following [TimesFM-3](https://research.google/blog/timesfm-3-a-zero-shot-foundation-model-for-multivariate-forecasting/)
 - Output heads: |Q| linear maps $\mathbb{R}^{dim} \to \mathbb{R}^{P_{len}}$ (one per quantile)
 
 ### Model Details
@@ -226,7 +236,3 @@ domains and various frequencies. After preprocessing, this yields approximately 
 - `configs/` — model and training configurations
 - `notebooks/inference` — how to load a trained model and generate forecasts
 - `training.py` — training script using PyTorch Lightning
-
-## Acknowledgements
-We thank the authors of the following repositories for inspiration and code snippets:
-- [TiRex](https://github.com/NX-AI/tirex)

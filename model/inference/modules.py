@@ -3,6 +3,7 @@
 import numpy as np
 import torch
 import torch.nn as nn
+import math
 from einops import rearrange
 from huggingface_hub import PyTorchModelHubMixin
 from rotary_embedding_torch import RotaryEmbedding
@@ -199,6 +200,21 @@ class ResidualBlock(nn.Module):
         out = out + res
         return out
 
+class PerDimScale(nn.Module):
+  def __init__(self, num_dims: int):
+    super().__init__()
+    self.num_dims = num_dims
+    self.per_dim_scale = nn.Parameter(torch.zeros(num_dims))
+    self._RECIPROCAL_OF_SOFTPLUS_0 = 1.442695041
+
+  def forward(self, x: torch.Tensor) -> torch.Tensor:
+    return (
+      x
+      * self._RECIPROCAL_OF_SOFTPLUS_0
+      / math.sqrt(self.num_dims)
+      * torch.nn.functional.softplus(self.per_dim_scale)
+    )
+
 
 class MultiHeadAttention(nn.Module):
     def __init__(self, d_model, n_heads, last=False):
@@ -217,6 +233,10 @@ class MultiHeadAttention(nn.Module):
         self.n_heads = n_heads
 
         self.rope = RotaryEmbedding(dim=self.head_dim // 2)
+
+        self.q_norm = nn.RMSNorm(self.head_dim)
+        self.k_norm = nn.RMSNorm(self.head_dim)
+        self.per_dim_scale = PerDimScale(self.head_dim)
 
         self.k_cache = None
         self.v_cache = None
@@ -254,6 +274,10 @@ class MultiHeadAttention(nn.Module):
 
         q = self.rope.rotate_queries_or_keys(q, offset=offset)
         k = self.rope.rotate_queries_or_keys(k)
+
+        q = self.q_norm(q)
+        k = self.k_norm(k)
+        q = self.per_dim_scale(q)
 
         values = nn.functional.scaled_dot_product_attention(
             q, k, v, is_causal=is_causal
