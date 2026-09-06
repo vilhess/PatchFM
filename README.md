@@ -8,14 +8,14 @@ Our model (with leakage) is deployed on the [TS-Arena benchmark](https://ts-aren
 
 ## Results on the FEV benchmark:
 
-**Our model (without leakage) is competitive with (old) state-of-the-art notably compared to [Toto1.0](https://arxiv.org/abs/2407.07874)**
+**Our model (without leakage) remains competitive, though it does not match the top-performing state-of-the-art models.**
 
 <div style="overflow-x: auto;">
 
-| Metric | Chronos-2 | TiRex-2 | Toto-2.0-2.5B | Toto-2.0-1B | Toto-2.0-313m | TimesFM-2.5 | TiRex | Toto-2.0-22m | TS-ICL | FlowState | TabPFN-TS-3 | **PatchFM** | citras-fm | Toto-1.0 | Toto-2.0-4m | Moirai-2.0 | Chronos-Bolt | TFT | Sundial-Base | PatchTST | CatBoost | LightGBM | AutoTheta | Seasonal Naive |
-|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| Win Rate | 0.81 | 0.78 | 0.78 | 0.77 | 0.75 | 0.71 | 0.70 | 0.67 | 0.61 | 0.60 | 0.60 | **0.58** | 0.58 | 0.58 | 0.55 | 0.53 | 0.49 | 0.37 | 0.32 | 0.31 | 0.22 | 0.21 | 0.20 | 0.13 |
-| Skill Score | 0.47 | 0.45 | 0.44 | 0.44 | 0.44 | 0.47 | 0.43 | 0.43 | 0.43 | 0.42 | 0.43 | **0.41** | 0.41 | 0.41 | 0.41 | 0.40 | 0.39 | 0.32 | 0.34 | 0.30 | 0.23 | 0.21 | 0.05 | 0.00 |
+| Metric | Chronos-2 | TiRex-2 | Toto-2.0-2.5B | Toto-2.0-1B | Toto-2.0-313m | TimesFM-2.5 | TiRex | Toto-2.0-22m | TS-ICL | **PatchFM** | FlowState | TabPFN-TS-3 | citras-fm | Toto-1.0 | Toto-2.0-4m | Moirai-2.0 | Chronos-Bolt | TFT | Sundial-Base | PatchTST | CatBoost | LightGBM | AutoTheta | Seasonal Naive | Naive | Drift |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| Win Rate | 0.81 | 0.78 | 0.77 | 0.77 | 0.75 | 0.71 | 0.70 | 0.67 | 0.61 | **0.61** | 0.60 | 0.60 | 0.58 | 0.57 | 0.55 | 0.53 | 0.49 | 0.37 | 0.32 | 0.31 | 0.22 | 0.21 | 0.20 | 0.13 | 0.09 | 0.07 |
+| Skill Score | 0.47 | 0.45 | 0.44 | 0.44 | 0.44 | 0.47 | 0.43 | 0.43 | 0.43 | **0.41** | 0.42 | 0.43 | 0.41 | 0.41 | 0.41 | 0.40 | 0.39 | 0.32 | 0.34 | 0.30 | 0.23 | 0.21 | 0.05 | 0.00 | -0.45 | -0.46 |
 
 </div>
 
