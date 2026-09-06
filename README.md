@@ -35,6 +35,7 @@ We are grateful to their authors.
 - Causal masking self-attention with RoPE (relative positions)
 - Causal RevIN with $\sinh^{-1}$ transform for normalization 
 - SwiGLU feed-forward networks
+- QK-Norm with per-dimension adaptive scaling on queries, following [TimesFM-3](https://research.google/blog/timesfm-3-a-zero-shot-foundation-model-for-multivariate-forecasting/)
 - Autoregressive multi-quantile decoding [MOIRAI2.0](https://arxiv.org/pdf/2511.11698)
 - KV-cache for efficient long-horizon inference
 - flips equivariance during inference (optional) [Reverso](https://arxiv.org/pdf/2602.17634v1)
